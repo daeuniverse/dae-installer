@@ -17,6 +17,4 @@ sudo bash -c 'bash <(curl -s https://raw.githubusercontent.com/daeuniverse/dae-i
 
 ## Commands
 
-Use `update-geoip` to update geoip without updating dae.
-Use `update-geosite` to update geosite without updating dae.
-Use `install` to install/update dae, and when installing/updating dae, geoip and geosite will also be updated.
+Use `update-geoip` to update geoip without updating dae, Use `update-geosite` to update geosite without updating dae, Use `install` to install/update dae, and when installing/updating dae, geoip and geosite will also be updated.
