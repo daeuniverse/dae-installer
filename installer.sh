@@ -249,7 +249,14 @@ installation(){
         echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
     echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
+    echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
     echo "${GREEN}You can start dae by running: systemctl start dae${RESET}"
+    if ! curl -sL https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae -o /usr/local/etc/dae/example.dae; then
+        echo "${YELLOW}warning: Failed to download example config file.${RESET}"
+        echo "${YELLOW}You can download it from https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae${RESET}"
+    else
+        echo "${GREEN}Example config file downloaded to: /usr/local/etc/dae/example.dae${RESET}"
+    fi
     cd $current_dir
 }
 # Main
