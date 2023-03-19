@@ -126,10 +126,60 @@ else
 fi
 }
 
+download_geoip() {
+    geoip_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+    echo "${GREEN}Downloading GeoIP database...${RESET}"
+    if ! curl -LO $geoip_url --progress-bar; then
+        echo "${RED}error: Failed to download GeoIP database!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        exit 1
+    fi
+    if ! curl -sLO $geoip_url.sha256sum; then
+        echo "${RED}error: Failed to download the checksum file!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        rm -f geoip.dat
+        exit 1
+    fi
+    geoip_local_sha256=$(sha256sum geoip.dat)
+    geoip_remote_sha256=$(cat geoip.dat.sha256sum)
+    if [ "$geoip_local_sha256" != "$geoip_remote_sha256" ]; then
+        echo "${RED}error: The checksum of the downloaded GeoIP database does not match!${RESET}"
+        echo "${RED}Local SHA256: $geoip_local_sha256${RESET}"
+        echo "${RED}Remote SHA256: $geoip_remote_sha256${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        rm -f geoip.dat geoip.dat.sha256sum
+        exit 1
+    fi
+}
+
+download_geosite() {
+    geosite_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+    echo "${GREEN}Downloading GeoSite database...${RESET}"
+    if ! curl -LO $geosite_url --progress-bar; then
+        echo "${RED}error: Failed to download GeoIP database!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        exit 1
+    fi
+    if ! curl -sLO $geosite_url.sha256sum; then
+        echo "${RED}error: Failed to download the checksum file!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        rm -f geoip.dat
+        exit 1
+    fi
+    geosite_local_sha256=$(sha256sum geosite.dat)
+    geosite_remote_sha256=$(cat geosite.dat.sha256sum)
+    if [ "$geoip_local_sha256" != "$geoip_remote_sha256" ]; then
+        echo "${RED}error: The checksum of the downloaded GeoIP database does not match!${RESET}"
+        echo "${RED}Local SHA256: $geosite_local_sha256${RESET}"
+        echo "${RED}Remote SHA256: $geosite_remote_sha256${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        rm -f geosite.dat geosite.dat.sha256sum
+        exit 1
+    fi
+}
+
 install_dae() {
-    current_dir=$(pwd)
     download_url=https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip
-    cd /tmp/
     echo "${GREEN}Downloading dae from $download_url...${RESET}"
     if ! curl -LO $download_url --progress-bar; then
         echo "${RED}error: Failed to download dae!${RESET}"
@@ -163,13 +213,25 @@ install_dae() {
     chmod +x /usr/local/bin/dae
     rm -f dae-linux-$MACHINE.zip
     echo "${GREEN}dae installed${RESET}"
-    cd $current_dir
+}
+
+install_data_file(){
+    if [ ! -d /usr/local/share/dae ]; then
+        mkdir -p /usr/local/share/dae
+    fi
+    download_geoip
+    download_geosite
+    mv geoip.dat /usr/local/share/dae/
+    mv geosite.dat /usr/local/share/dae/
+    rm -f geoip.dat.sha256sum geosite.dat.sha256sum
 }
 
 # Main
+current_dir=$(pwd)
 if [ "$we_should_exit" == "1" ]; then
     exit 1
 fi
+cd /tmp/
 check_version
 if [ "$current_version" == "$latest_version" ]; then
     echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
@@ -177,6 +239,7 @@ if [ "$current_version" == "$latest_version" ]; then
 fi
 check_arch
 install_dae
+install_data_file
 if [ -f /usr/lib/systemd/systemd ]; then
     install_systemd_service
 else
@@ -185,3 +248,4 @@ else
 fi
 echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
 echo "${GREEN}You can start dae by running: systemctl start dae${RESET}"
+cd $current_dir
