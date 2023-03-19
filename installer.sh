@@ -226,26 +226,38 @@ install_data_file(){
     rm -f geoip.dat.sha256sum geosite.dat.sha256sum
 }
 
+installation(){
+    current_dir=$(pwd)
+    if [ "$we_should_exit" == "1" ]; then
+        exit 1
+    fi 
+    cd /tmp/
+    check_version
+    if [ "$current_version" == "$latest_version" ]; then
+        echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
+        exit 0
+    fi
+    check_arch
+    install_dae
+    install_data_file
+    if [ -f /usr/lib/systemd/systemd ]; then
+        install_systemd_service
+    else
+        echo "${YELLOW}warning: Systemd is not found, no service would be installed.${RESET}"
+        echo "${YELLOW}You should write service file/script by yourself.${RESET}"
+    fi
+    echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
+    echo "${GREEN}You can start dae by running: systemctl start dae${RESET}"
+    cd $current_dir
+}
 # Main
-current_dir=$(pwd)
-if [ "$we_should_exit" == "1" ]; then
-    exit 1
+
+if [ "$1" == "update-geoip" ] || [ "$2" == "update-geoip" ]; then
+    update_geoip
 fi
-cd /tmp/
-check_version
-if [ "$current_version" == "$latest_version" ]; then
-    echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
-    exit 0
+if [ "$1" == "update-geosite" ] || [ "$2" == "update-geosite" ]; then
+    update_geosite
 fi
-check_arch
-install_dae
-install_data_file
-if [ -f /usr/lib/systemd/systemd ]; then
-    install_systemd_service
-else
-    echo "${YELLOW}warning: Systemd is not found, no service would be installed.${RESET}"
-    echo "${YELLOW}You should write service file/script by yourself.${RESET}"
+if [ "$1" == "install" ] || [ "$2" == "install" ] || [ "$1" == "" ]; then
+    installation
 fi
-echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
-echo "${GREEN}You can start dae by running: systemctl start dae${RESET}"
-cd $current_dir
