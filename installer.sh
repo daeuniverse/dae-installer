@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e
 
 ## Color
 if command -v tput > /dev/null 2>&1; then
@@ -8,6 +8,12 @@ if command -v tput > /dev/null 2>&1; then
     GREEN=$(tput setaf 2)
     YELLOW=$(tput setaf 3)
     RESET=$(tput sgr0)
+fi
+
+## Check root
+if [[ $EUID -ne 0 ]]; then
+    echo "${RED}error: This script must be run as root!${RESET}"
+    exit 1
 fi
 
 ## Check curl, unzip, jq
