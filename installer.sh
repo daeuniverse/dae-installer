@@ -129,6 +129,7 @@ fi
 download_geoip() {
     geoip_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
     echo "${GREEN}Downloading GeoIP database...${RESET}"
+    echo "${GREEN}Downloading from: $geoip_url${RESET}"
     if ! curl -LO $geoip_url --progress-bar; then
         echo "${RED}error: Failed to download GeoIP database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
@@ -155,6 +156,7 @@ download_geoip() {
 download_geosite() {
     geosite_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
     echo "${GREEN}Downloading GeoSite database...${RESET}"
+    echo "${GREEN}Downloading from: $geosite_url${RESET}"
     if ! curl -LO $geosite_url --progress-bar; then
         echo "${RED}error: Failed to download GeoIP database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
