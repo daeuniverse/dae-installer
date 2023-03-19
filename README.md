@@ -1,5 +1,5 @@
 # dae-installer
-dae's install script, written in bash and buggy brain (:
+dae's install script, you can use it to eat dae! 😊
 
 ## Usage
 

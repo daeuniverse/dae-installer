@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 ## Color
 if command -v tput > /dev/null 2>&1; then
     RED=$(tput setaf 1)
@@ -60,7 +62,7 @@ check_version(){
     current_version=$(/usr/local/bin/dae --version | awk '{print $3}')
     fi
     if ! curl -s 'https://api.github.com/repos/daeuniverse/dae/releases/latest' -o /tmp/dae.json; then
-        echo "${RED}error: Failed to get the latest version of dae.${RESET}"
+        echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         we_should_exit=1
     else
@@ -120,11 +122,28 @@ fi
 
 install_dae() {
     current_dir=$(pwd)
-    echo "${GREEN}Installing dae...${RESET}"
+    download_url=https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip
     cd /tmp/
-    curl -LO https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip --progress-bar
+    echo "${GREEN}Downloading dae from $download_url...${RESET}"
+    if ! curl -LO $download_url --progress-bar; then
+        echo "${RED}error: Failed to download dae!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        exit 1
+    fi
     local_sha256=$(sha256sum dae-linux-$MACHINE.zip | awk -F ' ' '{print $1}')
-    remote_sha256=$(curl -sL https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst | awk -F "./dae-linux-$MACHINE.zip" 'NR==3' | awk '{print $1}')
+    if [ -z "$local_sha256" ]; then
+        echo "${RED}error: Failed to get the checksum of the downloaded file!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        rm -f dae-linux-$MACHINE.zip
+        exit 1
+    fi
+    if ! curl -sL $download_url.dgst -o dae-linux-$MACHINE.zip.dgst; then
+        echo "${RED}error: Failed to download the checksum file!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        rm -f dae-linux-$MACHINE.zip.dgst
+        exit 1
+    fi
+    remote_sha256=$(cat ./dae-linux-$MACHINE.zip.dgst | awk -F "./dae-linux-$MACHINE.zip" 'NR==3' | awk '{print $1}')
     if [ "$local_sha256" != "$remote_sha256" ]; then
         echo "${RED}error: The checksum of the downloaded file does not match!${RESET}"
         echo "${RED}Local SHA256: $local_sha256${RESET}"
@@ -142,16 +161,21 @@ install_dae() {
 }
 
 # Main
+if [ "$we_should_exit" == "1" ]; then
+    exit 1
+fi
 check_version
 if [ "$current_version" == "$latest_version" ]; then
     echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
     exit 0
 fi
-if [ "$we_should_exit" == "1" ]; then
-    exit 1
-fi
 check_arch
 install_dae
-install_systemd_service
+if [ -f /usr/lib/systemd/systemd ]; then
+    install_systemd_service
+else
+    echo "${YELLOW}warning: Systemd is not found, no service would be installed.${RESET}"
+    echo "${YELLOW}You should write service file/script by yourself.${RESET}"
+fi
 echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
 echo "${GREEN}You can start dae by running: systemctl start dae${RESET}"
