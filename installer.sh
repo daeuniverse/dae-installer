@@ -253,10 +253,10 @@ installation(){
 # Main
 
 if [ "$1" == "update-geoip" ] || [ "$2" == "update-geoip" ]; then
-    update_geoip
+    download_geoip
 fi
 if [ "$1" == "update-geosite" ] || [ "$2" == "update-geosite" ]; then
-    update_geosite
+    download_geosite
 fi
 if [ "$1" == "install" ] || [ "$2" == "install" ] || [ "$1" == "" ]; then
     installation
