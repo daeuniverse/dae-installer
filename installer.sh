@@ -126,7 +126,7 @@ else
 fi
 }
 
-download_geoip() {
+update_geoip() {
     geoip_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
     echo "${GREEN}Downloading GeoIP database...${RESET}"
     echo "${GREEN}Downloading from: $geoip_url${RESET}"
@@ -151,9 +151,11 @@ download_geoip() {
         rm -f geoip.dat geoip.dat.sha256sum
         exit 1
     fi
+    mv geoip.dat /usr/local/share/dae/
+    rm -f geoip.dat.sha256sum
 }
 
-download_geosite() {
+update_geosite() {
     geosite_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
     echo "${GREEN}Downloading GeoSite database...${RESET}"
     echo "${GREEN}Downloading from: $geosite_url${RESET}"
@@ -178,6 +180,8 @@ download_geosite() {
         rm -f geosite.dat geosite.dat.sha256sum
         exit 1
     fi
+    mv geosite.dat /usr/local/share/dae/
+    rm -f geosite.dat.sha256sum
 }
 
 install_dae() {
@@ -221,19 +225,14 @@ install_data_file(){
     if [ ! -d /usr/local/share/dae ]; then
         mkdir -p /usr/local/share/dae
     fi
-    download_geoip
-    download_geosite
-    mv geoip.dat /usr/local/share/dae/
-    mv geosite.dat /usr/local/share/dae/
-    rm -f geoip.dat.sha256sum geosite.dat.sha256sum
+    update_geoip
+    update_geosite
 }
 
 installation(){
-    current_dir=$(pwd)
     if [ "$we_should_exit" == "1" ]; then
         exit 1
-    fi 
-    cd /tmp/
+    fi
     check_version
     if [ "$current_version" == "$latest_version" ]; then
         echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
@@ -257,33 +256,35 @@ installation(){
     else
         echo "${GREEN}Example config file downloaded to: /usr/local/etc/dae/example.dae${RESET}"
     fi
-    cd $current_dir
 }
 # Main
-if [ "$1" == "download-geoip" ]; then
+current_dir=$(pwd)
+cd /tmp/
+if [ "$1" == "update-geoip" ]; then
     update_geoip
-elif [ "$1" == "download-geosite" ]; then
+elif [ "$1" == "update-geosite" ]; then
     update_geosite
 elif [ "$1" == "install" ]; then
     installation
 fi
-if [ "$2" == "download-geoip" ]; then
+if [ "$2" == "update-geoip" ]; then
     update_geoip
-elif [ "$2" == "download-geosite" ]; then
+elif [ "$2" == "update-geosite" ]; then
     update_geosite
 elif [ "$2" == "install" ]; then
     installation
 fi
-if [ "$3" == "download-geoip" ]; then
+if [ "$3" == "update-geoip" ]; then
     update_geoip
-elif [ "$3" == "download-geosite" ]; then
+elif [ "$3" == "update-geosite" ]; then
     update_geosite
 elif [ "$3" == "install" ]; then
     installation
 elif [ "$1" == "" ]; then
     installation
 fi
-if ! [ "$1" == "update-geoip" ] || ! [ "$1" == "update-geosite" ] || ! [ "$1" == "install" ] || ! [ "$1" == "" ]; then
+cd $current_dir
+if ! [ "$1" == "update-geoip" ] && ! [ "$1" == "update-geosite" ] && ! [ "$1" == "install" ] && ! [ "$1" == "" ]; then
     echo "${YELLOW}error: Invalid argument, usage:${RESET}"
     echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
     echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
