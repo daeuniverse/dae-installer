@@ -260,7 +260,20 @@ installation(){
     cd $current_dir
 }
 # Main
-
+if [ "$1" != "update-geoip" ] || [ "$1" != "update-geosite" ] || [ "$1" != "install" ] || [ "$1" != "" ]; then
+    echo "${YELLOW}error: Invalid argument, usage:${RESET}"
+    echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
+    echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
+    echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
+    exit 1
+fi
+if [ "$2" != "update-geoip" ] || [ "$2" != "update-geosite" ] || [ "$2" != "install" ] ; then
+    echo "${YELLOW}error: Invalid argument, usage:${RESET}"
+    echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
+    echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
+    echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
+    exit 1
+fi
 if [ "$1" == "update-geoip" ] || [ "$2" == "update-geoip" ]; then
     download_geoip
 fi
@@ -269,10 +282,4 @@ if [ "$1" == "update-geosite" ] || [ "$2" == "update-geosite" ]; then
 fi
 if [ "$1" == "install" ] || [ "$2" == "install" ] || [ "$1" == "" ]; then
     installation
-fi
-if [ "$1" != "update-geoip" ] || [ "$2" != "update-geoip" ] || [ "$1" != "update-geosite" ] || [ "$2" != "update-geosite" ] || [ "$1" != "install" ] || [ "$2" != "install" ] || [ "$1" != "" ]; then
-    echo "${YELLOW}error: Invalid argument, usage:${RESET}"
-    echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
-    echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
-    echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
 fi
