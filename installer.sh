@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -x
 
 ## Color
 if command -v tput > /dev/null 2>&1; then
@@ -260,26 +260,33 @@ installation(){
     cd $current_dir
 }
 # Main
-if [ "$1" != "update-geoip" ] || [ "$1" != "update-geosite" ] || [ "$1" != "install" ] || [ "$1" != "" ]; then
-    echo "${YELLOW}error: Invalid argument, usage:${RESET}"
-    echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
-    echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
-    echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
-    exit 1
-fi
-if [ "$2" != "update-geoip" ] || [ "$2" != "update-geosite" ] || [ "$2" != "install" ] || [ "$2" != "" ]; then
-    echo "${YELLOW}error: Invalid argument, usage:${RESET}"
-    echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
-    echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
-    echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
-    exit 1
-fi
-if [ "$1" == "update-geoip" ] || [ "$2" == "update-geoip" ]; then
-    download_geoip
-fi
-if [ "$1" == "update-geosite" ] || [ "$2" == "update-geosite" ]; then
-    download_geosite
-fi
-if [ "$1" == "install" ] || [ "$2" == "install" ] || [ "$1" == "" ]; then
+if [ "$1" == "download-geoip" ]; then
+    update_geoip
+elif [ "$1" == "download-geosite" ]; then
+    update_geosite
+elif [ "$1" == "install" ]; then
     installation
+fi
+if [ "$2" == "download-geoip" ]; then
+    update_geoip
+elif [ "$2" == "download-geosite" ]; then
+    update_geosite
+elif [ "$2" == "install" ]; then
+    installation
+fi
+if [ "$3" == "download-geoip" ]; then
+    update_geoip
+elif [ "$3" == "download-geosite" ]; then
+    update_geosite
+elif [ "$3" == "install" ]; then
+    installation
+elif [ "$1" == "" ]; then
+    installation
+fi
+if ! [ "$1" == "update-geoip" ] || ! [ "$1" == "update-geosite" ] || ! [ "$1" == "install" ] || ! [ "$1" == "" ]; then
+    echo "${YELLOW}error: Invalid argument, usage:${RESET}"
+    echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
+    echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
+    echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
+    exit 1
 fi
