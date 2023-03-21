@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -ex
 
 ## Color
 if command -v tput > /dev/null 2>&1; then
