@@ -267,7 +267,7 @@ if [ "$1" != "update-geoip" ] || [ "$1" != "update-geosite" ] || [ "$1" != "inst
     echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
     exit 1
 fi
-if [ "$2" != "update-geoip" ] || [ "$2" != "update-geosite" ] || [ "$2" != "install" ] ; then
+if [ "$2" != "update-geoip" ] || [ "$2" != "update-geosite" ] || [ "$2" != "install" ] || [ "$2" != "" ]; then
     echo "${YELLOW}error: Invalid argument, usage:${RESET}"
     echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
     echo "${YELLOW}Run 'install.sh update-geoip' to update GeoIP database,${RESET}"
