@@ -61,6 +61,49 @@ WantedBy=multi-user.target' > /etc/systemd/system/dae.service
     echo "${GREEN}Systemd service installed${RESET}"
 }
 
+install_openrc_service(){
+    echo "${GREEN}Installing OpenRC service...${RESET}"
+    echo '#!/sbin/openrc-run
+description="dae Service"
+command="/usr/local/bin/dae"
+command_args="run -c /usr/local/etc/dae/config.dae"
+pidfile="/run/${RC_SVCNAME}.pid"
+command_background="yes"
+rc_ulimit="-n 30000"
+rc_cgroup_cleanup="yes"
+
+depend() {
+    after docker net
+    use net
+}
+
+start_pre() {
+   if [ ! -d "/tmp/dae/" ]; then 
+     mkdir "/tmp/dae" 
+   fi
+   if [ ! -d "/var/log/dae/" ]; then
+   ln -s "/tmp/dae/" "/var/log/"
+   fi
+   if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
+      eerror "dae config file /usr/local/etc/dae/config.dae is invalid, exiting"
+      return 1
+   fi
+}
+
+reload() {
+	ebegin "Reloading $RC_SVCNAME"
+	/usr/bin/local/dae reload $(cat "/run/${RC_SVCNAME}.pid")
+	eend $?
+}' > /etc/init.d/dae
+    chmod +x /etc/init.d/dae
+    rc-update add dae default
+    echo "${GREEN}OpenRC service installed,${RESET}"
+    echo "${GREEN}you can start dae by running:${RESET}"
+    echo "${GREEN}rc-service dae start${RESET}"
+    echo "${GREEN}if you want to start dae at system boot:${RESET}"
+    echo "${GREEN}rc-update add dae default${RESET}"
+}
+
 check_version(){
     if ! command -v /usr/local/bin/dae > /dev/null 2>&1; then
     current_version=0
@@ -127,6 +170,9 @@ fi
 }
 
 update_geoip() {
+    if [ ! -d /usr/local/share/dae ]; then
+        mkdir -p /usr/local/share/dae
+    fi
     geoip_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
     echo "${GREEN}Downloading GeoIP database...${RESET}"
     echo "${GREEN}Downloading from: $geoip_url${RESET}"
@@ -157,6 +203,9 @@ update_geoip() {
 }
 
 update_geosite() {
+    if [ ! -d /usr/local/share/dae ]; then
+        mkdir -p /usr/local/share/dae
+    fi
     geosite_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
     echo "${GREEN}Downloading GeoSite database...${RESET}"
     echo "${GREEN}Downloading from: $geosite_url${RESET}"
@@ -224,14 +273,6 @@ install_dae() {
     echo "${GREEN}dae installed${RESET}"
 }
 
-install_data_file(){
-    if [ ! -d /usr/local/share/dae ]; then
-        mkdir -p /usr/local/share/dae
-    fi
-    update_geoip
-    update_geosite
-}
-
 installation(){
     if [ "$we_should_exit" == "1" ]; then
         exit 1
@@ -243,21 +284,25 @@ installation(){
     fi
     check_arch
     install_dae
-    install_data_file
+    update_geoip
+    update_geosite
     if [ -f /usr/lib/systemd/systemd ]; then
         install_systemd_service
+    elif [ -f /sbin/openrc-run ]; then
+        install_openrc_service
     else
-        echo "${YELLOW}warning: Systemd is not found, no service would be installed.${RESET}"
+        echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
         echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
     echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
-    echo "${GREEN}You can start dae by running: systemctl start dae${RESET}"
     if ! curl -sL https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae -o /usr/local/etc/dae/example.dae; then
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
         echo "${YELLOW}You can download it from https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae${RESET}"
     else
         echo "${GREEN}Example config file downloaded to: /usr/local/etc/dae/example.dae${RESET}"
+        echo "${GREEN}You can edit it and save it to /usr/local/etc/dae/config.dae${RESET}"
+        echo "${GREEN}Then start dae by running: systemctl start dae${RESET}"
     fi
 }
 # Main
