@@ -6,13 +6,13 @@ dae's install script, you can use it to eat dae! 😊
 If you are root:
 
 ```sh
-bash <(curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/installer.sh)
+bash <(curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/installer.sh) install
 ```
 
 If you are not root but you can use sudo:
 
 ```sh
-sudo bash -c 'bash <(curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/installer.sh)'
+sudo bash -c "$(curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/installer.sh)" @ install
 ```
 
 ## Commands
@@ -22,3 +22,4 @@ Use `update-geoip` to update geoip without updating dae, use `update-geosite` to
 ## Thanks to
 
 1. Project V's script: https://github.com/v2fly/fhs-install-v2ray
+2. Project X's script: https://github.com/XTLS/Xray-install
