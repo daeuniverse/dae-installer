@@ -42,8 +42,7 @@ install_systemd_service() {
     echo '[Unit]
 Description=dae Service
 Documentation=https://github.com/daeuniverse/dae
-After=network-online.target docker.service
-Wants=network-online.target
+After=network-online.target docker.service systemd-sysctl.service
 
 [Service]
 Type=notify
@@ -59,6 +58,10 @@ Restart=on-abnormal
 WantedBy=multi-user.target' > /etc/systemd/system/dae.service
     systemctl daemon-reload
     echo "${GREEN}Systemd service installed${RESET}"
+    echo "${GREEN}you can start dae by running:${RESET}"
+    echo "${GREEN}systemctl start dae${RESET}"
+    echo "${GREEN}if you want to start dae at system boot:${RESET}"
+    echo "${GREEN}systemctl enable dae${RESET}"
 }
 
 install_openrc_service(){
