@@ -238,6 +238,34 @@ update_geosite() {
     echo "${GREEN}GeoSite database have been updated.${RESET}"
 }
 
+stop_dae(){
+    if [ -f /etc/systemd/system/dae.service ] && [ -n "$(pidof dae)" ]; then
+        echo "${GREEN}Stopping dae...${RESET}"
+        systemctl stop dae
+        dae_stopped=1
+        echo "${GREEN}Stopped dae${RESET}"
+    fi
+    if [ -f /etc/init.d/dae ] && [ -n "$(pidof dae)" ]; then
+        echo "${GREEN}Stopping dae...${RESET}"
+        /etc/init.d/dae stop
+        dae_stopped=1
+        echo "${GREEN}Stopped dae${RESET}"
+    fi
+}
+
+start_dae(){
+    if [ -f /etc/systemd/system/dae.service ] && [ $dae_stopped == 1 ]; then
+        echo "${GREEN}Starting dae...${RESET}"
+        systemctl start dae
+        echo "${GREEN}Started dae${RESET}"
+    fi
+    if [ -f /etc/init.d/dae ] && [ $dae_stopped == 1 ]; then
+        echo "${GREEN}Starting dae...${RESET}"
+        /etc/init.d/dae start
+        echo "${GREEN}Started dae${RESET}"
+    fi
+}
+
 install_dae() {
     download_url=https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip
     echo "${GREEN}Downloading dae...${RESET}"
@@ -289,6 +317,8 @@ installation(){
     install_dae
     update_geoip
     update_geosite
+    stop_dae
+    start_dae
     if [ -f /usr/lib/systemd/systemd ]; then
         install_systemd_service
     elif [ -f /sbin/openrc-run ]; then
