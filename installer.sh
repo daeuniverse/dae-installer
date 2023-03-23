@@ -57,7 +57,7 @@ Restart=on-abnormal
 [Install]
 WantedBy=multi-user.target' > /etc/systemd/system/dae.service
     systemctl daemon-reload
-    echo "${GREEN}Systemd service installed${RESET}"
+    echo "${GREEN}Systemd service installed,${RESET}"
     echo "${GREEN}you can start dae by running:${RESET}"
     echo "${GREEN}systemctl start dae${RESET}"
     echo "${GREEN}if you want to start dae at system boot:${RESET}"
@@ -176,7 +176,7 @@ update_geoip() {
     if [ ! -d /usr/local/share/dae ]; then
         mkdir -p /usr/local/share/dae
     fi
-    geoip_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+    geoip_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geoip.dat"
     echo "${GREEN}Downloading GeoIP database...${RESET}"
     echo "${GREEN}Downloading from: $geoip_url${RESET}"
     if ! curl -LO $geoip_url --progress-bar; then
@@ -185,7 +185,7 @@ update_geoip() {
         exit 1
     fi
     if ! curl -sLO $geoip_url.sha256sum; then
-        echo "${RED}error: Failed to download the checksum file!${RESET}"
+        echo "${RED}error: Failed to download the checksum file of GeoIP database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         rm -f geoip.dat
         exit 1
@@ -197,7 +197,7 @@ update_geoip() {
         echo "${RED}Local SHA256: $geoip_local_sha256${RESET}"
         echo "${RED}Remote SHA256: $geoip_remote_sha256${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f geoip.dat geoip.dat.sha256sum
+        rm -f geoip.dat
         exit 1
     fi
     mv geoip.dat /usr/local/share/dae/
@@ -209,18 +209,18 @@ update_geosite() {
     if [ ! -d /usr/local/share/dae ]; then
         mkdir -p /usr/local/share/dae
     fi
-    geosite_url=https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
+    geosite_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geosite.dat"
     echo "${GREEN}Downloading GeoSite database...${RESET}"
     echo "${GREEN}Downloading from: $geosite_url${RESET}"
     if ! curl -LO $geosite_url --progress-bar; then
-        echo "${RED}error: Failed to download GeoIP database!${RESET}"
+        echo "${RED}error: Failed to download GeoSite database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     fi
     if ! curl -sLO $geosite_url.sha256sum; then
-        echo "${RED}error: Failed to download the checksum file!${RESET}"
+        echo "${RED}error: Failed to download the checksum file of GeoSite database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f geoip.dat
+        rm -f geosite.dat
         exit 1
     fi
     geosite_local_sha256=$(sha256sum geosite.dat)
@@ -239,13 +239,13 @@ update_geosite() {
 }
 
 stop_dae(){
-    if [ -f /etc/systemd/system/dae.service ] && [ -n "$(pidof dae)" ]; then
+    if [ -f /etc/systemd/system/dae.service ] && [ -f /run/dae.pid ] && [ -n "$(cat /run/dae.pid)" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         systemctl stop dae
         dae_stopped=1
         echo "${GREEN}Stopped dae${RESET}"
     fi
-    if [ -f /etc/init.d/dae ] && [ -n "$(pidof dae)" ]; then
+    if [ -f /etc/init.d/dae ] && [ -f /run/dae.pid ] && [ -n "$(cat /run/dae.pid)" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         /etc/init.d/dae stop
         dae_stopped=1
@@ -329,13 +329,12 @@ installation(){
     fi
     echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
-    if ! curl -sL https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae -o /usr/local/etc/dae/example.dae; then
+    if ! curl -sL "https://github.com/daeuniverse/dae/raw/main/example.dae" -o /usr/local/etc/dae/example.dae; then
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
         echo "${YELLOW}You can download it from https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae${RESET}"
     else
         echo "${GREEN}Example config file downloaded to: /usr/local/etc/dae/example.dae${RESET}"
         echo "${GREEN}You can edit it and save it to /usr/local/etc/dae/config.dae${RESET}"
-        echo "${GREEN}Then start dae by running: systemctl start dae${RESET}"
     fi
 }
 # Main
