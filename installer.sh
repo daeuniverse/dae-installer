@@ -38,7 +38,7 @@ done
 
 
 install_systemd_service() {
-    echo "${GREEN}Installing systemd service...${RESET}"
+    echo "${GREEN}Installing/updating systemd service...${RESET}"
     echo '[Unit]
 Description=dae Service
 Documentation=https://github.com/daeuniverse/dae
@@ -65,7 +65,7 @@ WantedBy=multi-user.target' > /etc/systemd/system/dae.service
 }
 
 install_openrc_service(){
-    echo "${GREEN}Installing OpenRC service...${RESET}"
+    echo "${GREEN}Installing/updating OpenRC service...${RESET}"
     echo '#!/sbin/openrc-run
 description="dae Service"
 command="/usr/local/bin/dae"
@@ -172,10 +172,13 @@ else
 fi
 }
 
-update_geoip() {
+check_share_dir() {
     if [ ! -d /usr/local/share/dae ]; then
         mkdir -p /usr/local/share/dae
     fi
+}
+
+download_geoip() {
     geoip_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geoip.dat"
     echo "${GREEN}Downloading GeoIP database...${RESET}"
     echo "${GREEN}Downloading from: $geoip_url${RESET}"
@@ -200,15 +203,14 @@ update_geoip() {
         rm -f geoip.dat
         exit 1
     fi
+}
+update_geoip() {
     mv geoip.dat /usr/local/share/dae/
     rm -f geoip.dat.sha256sum
     echo "${GREEN}GeoIP database have been updated.${RESET}"
 }
 
-update_geosite() {
-    if [ ! -d /usr/local/share/dae ]; then
-        mkdir -p /usr/local/share/dae
-    fi
+download_geosite() {
     geosite_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geosite.dat"
     echo "${GREEN}Downloading GeoSite database...${RESET}"
     echo "${GREEN}Downloading from: $geosite_url${RESET}"
@@ -233,6 +235,9 @@ update_geosite() {
         rm -f geosite.dat geosite.dat.sha256sum
         exit 1
     fi
+}
+
+update_geosite() {
     mv geosite.dat /usr/local/share/dae/
     rm -f geosite.dat.sha256sum
     echo "${GREEN}GeoSite database have been updated.${RESET}"
@@ -248,25 +253,25 @@ stop_dae(){
     if [ -f /etc/init.d/dae ] && [ -f /run/dae.pid ] && [ -n "$(cat /run/dae.pid)" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         /etc/init.d/dae stop
-        dae_stopped=1
+        dae_stopped="1"
         echo "${GREEN}Stopped dae${RESET}"
     fi
 }
 
 start_dae(){
-    if [ -f /etc/systemd/system/dae.service ] && [ $dae_stopped == 1 ]; then
+    if [ -f /etc/systemd/system/dae.service ] && [ "$dae_stopped" == "1" ]; then
         echo "${GREEN}Starting dae...${RESET}"
         systemctl start dae
         echo "${GREEN}Started dae${RESET}"
     fi
-    if [ -f /etc/init.d/dae ] && [ $dae_stopped == 1 ]; then
+    if [ -f /etc/init.d/dae ] && [ "$dae_stopped" == "1" ]; then
         echo "${GREEN}Starting dae...${RESET}"
         /etc/init.d/dae start
         echo "${GREEN}Started dae${RESET}"
     fi
 }
 
-install_dae() {
+download_dae() {
     download_url=https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip
     echo "${GREEN}Downloading dae...${RESET}"
     echo "${GREEN}Downloading from: $download_url${RESET}"
@@ -297,6 +302,9 @@ install_dae() {
         rm -f dae-linux-$MACHINE.zip
         exit 1
     fi
+}
+
+install_dae() {
     unzip dae-linux-$MACHINE.zip -d /usr/local/bin/
     mv /usr/local/bin/dae-linux-$MACHINE /usr/local/bin/dae
     chmod +x /usr/local/bin/dae
@@ -304,7 +312,17 @@ install_dae() {
     echo "${GREEN}dae installed${RESET}"
 }
 
-installation(){
+download_example_config() {
+    if ! curl -sL "https://github.com/daeuniverse/dae/raw/main/example.dae" -o /usr/local/etc/dae/example.dae; then
+        echo "${YELLOW}warning: Failed to download example config file.${RESET}"
+        echo "${YELLOW}You can download it from https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae${RESET}"
+    else
+        echo "${GREEN}Example config file downloaded to: /usr/local/etc/dae/example.dae${RESET}"
+        echo "${GREEN}You can edit it and save it to /usr/local/etc/dae/config.dae${RESET}"
+    fi
+}
+
+installation() {
     if [ "$we_should_exit" == "1" ]; then
         exit 1
     fi
@@ -314,10 +332,13 @@ installation(){
         exit 0
     fi
     check_arch
+    download_dae
+    download_geoip
+    download_geosite
+    stop_dae
     install_dae
     update_geoip
     update_geosite
-    stop_dae
     start_dae
     if [ -f /usr/lib/systemd/systemd ]; then
         install_systemd_service
@@ -329,34 +350,36 @@ installation(){
     fi
     echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
-    if ! curl -sL "https://github.com/daeuniverse/dae/raw/main/example.dae" -o /usr/local/etc/dae/example.dae; then
-        echo "${YELLOW}warning: Failed to download example config file.${RESET}"
-        echo "${YELLOW}You can download it from https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae${RESET}"
-    else
-        echo "${GREEN}Example config file downloaded to: /usr/local/etc/dae/example.dae${RESET}"
-        echo "${GREEN}You can edit it and save it to /usr/local/etc/dae/config.dae${RESET}"
+    if [ ! -f /usr/local/etc/dae/config.dae ]; then
+        download_example_config
     fi
 }
 # Main
 current_dir=$(pwd)
 cd /tmp/
 if [ "$1" == "update-geoip" ]; then
+    download_geoip
     update_geoip
 elif [ "$1" == "update-geosite" ]; then
+    download_geosite
     update_geosite
 elif [ "$1" == "install" ]; then
     installation
 fi
 if [ "$2" == "update-geoip" ]; then
+    download_geoip
     update_geoip
 elif [ "$2" == "update-geosite" ]; then
+    download_geosite
     update_geosite
 elif [ "$2" == "install" ]; then
     installation
 fi
 if [ "$3" == "update-geoip" ]; then
+    download_geoip
     update_geoip
 elif [ "$3" == "update-geosite" ]; then
+    download_geosite
     update_geosite
 elif [ "$3" == "install" ]; then
     installation
