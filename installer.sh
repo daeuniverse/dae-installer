@@ -76,7 +76,7 @@ rc_ulimit="-n 30000"
 rc_cgroup_cleanup="yes"
 
 depend() {
-    after docker net
+    after docker net sysctl
     use net
 }
 
@@ -130,8 +130,8 @@ case "$(uname -m)" in
         MACHINE='x86_32'
         ;;
       'amd64' | 'x86_64')
-        MACHINE='x86_64'
-        # AMD64='yes'
+        # MACHINE='x86_64'
+        AMD64='yes'
         ;;
       'armv5tel')
         MACHINE='armv5'
@@ -167,15 +167,15 @@ case "$(uname -m)" in
         exit 1
         ;;
     esac
-    # if [[ "$AMD64" == 'yes' ]]; then
-    #     if [ -n $(cat /proc/cpuinfo | grep avx2) ]; then
-    #         MACHINE='x86_64_v3_avx2'
-    #     elif [ -n $(cat /proc/cpuinfo | grep sse) ]; then
-    #         MACHINE='x86_64_v2_sse'
-    #     else
-    #         MACHINE='x86_64_v3'
-    #     fi
-    # fi
+    if [[ "$AMD64" == 'yes' ]]; then
+        if [ -n "$(cat /proc/cpuinfo | grep avx2)" ]; then
+            MACHINE='x86_64_v3_avx2'
+        elif [ -n "$(cat /proc/cpuinfo | grep sse)" ]; then
+            MACHINE='x86_64_v2_sse'
+        else
+            MACHINE='x86_64'
+        fi
+    fi
 else
     echo "${RED}error: The operating system is not supported.${RESET}"
     exit 1
