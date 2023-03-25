@@ -57,7 +57,7 @@ Restart=on-abnormal
 [Install]
 WantedBy=multi-user.target' > /etc/systemd/system/dae.service
     systemctl daemon-reload
-    echo "${GREEN}Systemd service installed,${RESET}"
+    echo "${GREEN}Systemd service installed/updated,${RESET}"
     echo "${GREEN}you can start dae by running:${RESET}"
     echo "${GREEN}systemctl start dae${RESET}"
     echo "${GREEN}if you want to start dae at system boot:${RESET}"
@@ -100,7 +100,7 @@ reload() {
 }' > /etc/init.d/dae
     chmod +x /etc/init.d/dae
     rc-update add dae default
-    echo "${GREEN}OpenRC service installed,${RESET}"
+    echo "${GREEN}OpenRC service installed/updated,${RESET}"
     echo "${GREEN}you can start dae by running:${RESET}"
     echo "${GREEN}rc-service dae start${RESET}"
     echo "${GREEN}if you want to start dae at system boot:${RESET}"
@@ -349,7 +349,6 @@ installation() {
     install_dae
     update_geoip
     update_geosite
-    start_dae
     if [ -f /usr/lib/systemd/systemd ]; then
         install_systemd_service
     elif [ -f /sbin/openrc-run ]; then
@@ -358,6 +357,7 @@ installation() {
         echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
         echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
+    start_dae
     echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
     if [ ! -f /usr/local/etc/dae/config.dae ]; then
