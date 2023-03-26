@@ -26,7 +26,7 @@ for tool_need in curl unzip jq; do
         elif command -v yum > /dev/null  2>&1; then
         yum install $tool_need -y
         elif command -v zypper > /dev/null 2>&1; then
-        zypper install --non-interactive $tool_need
+        zypper --non-interactive install $tool_need
         elif command -v pacman > /dev/null 2>&1; then
         pacman -S $tool_need --noconfirm
         else
