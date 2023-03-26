@@ -72,6 +72,8 @@ command="/usr/local/bin/dae"
 command_args="run -c /usr/local/etc/dae/config.dae"
 pidfile="/run/${RC_SVCNAME}.pid"
 command_background="yes"
+output_log="/var/log/dae-access.log"
+error_log="/var/log/dae-error.log"
 rc_ulimit="-n 30000"
 rc_cgroup_cleanup="yes"
 
