@@ -256,7 +256,7 @@ update_geosite() {
 }
 
 stop_dae(){
-    if [ -f /etc/systemd/system/dae.service ] && [ -f /run/dae.pid ] && [ -n "$(cat /run/dae.pid)" ]; then
+    if [ "$(systemctl is-active dae)" == "active" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         systemctl stop dae
         dae_stopped=1
