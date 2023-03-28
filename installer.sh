@@ -217,6 +217,7 @@ download_geoip() {
     fi
 }
 update_geoip() {
+    check_share_dir
     mv geoip.dat /usr/local/share/dae/
     rm -f geoip.dat.sha256sum
     echo "${GREEN}GeoIP database have been updated.${RESET}"
@@ -250,6 +251,7 @@ download_geosite() {
 }
 
 update_geosite() {
+    check_share_dir
     mv geosite.dat /usr/local/share/dae/
     rm -f geosite.dat.sha256sum
     echo "${GREEN}GeoSite database have been updated.${RESET}"
