@@ -16,8 +16,8 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-## Check curl, unzip, jq, virt-what
-for tool_need in curl unzip jq virt-what; do
+## Check curl, unzip, virt-what
+for tool_need in curl unzip virt-what; do
     if ! command -v $tool_need > /dev/null 2>&1; then
         if command -v apt > /dev/null 2>&1; then
         apt update; apt install $tool_need -y
@@ -130,13 +130,16 @@ check_version(){
     else
     current_version=$(/usr/local/bin/dae --version | awk '{print $3}')
     fi
-    if ! curl -s 'https://api.github.com/repos/daeuniverse/dae/releases/latest' -o /tmp/dae.json; then
+    temp_file=$(mktemp /tmp/dae_version.XXXXX)
+    trap "rm -f '$temp_file'" exit
+    if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         we_should_exit=1
     else
-        latest_version=$(jq -r '.tag_name' /tmp/dae.json)
-        rm -f /tmp/dae.json
+    	cat $temp_file
+        latest_version=$(grep -i ^location: $temp_file|rev|cut -d/ -f1|rev)
+	latest_version=${latest_version%$'\r'} # Trim suffix \r
     fi
 }
 
