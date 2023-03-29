@@ -78,7 +78,7 @@ rc_ulimit="-n 30000"
 rc_cgroup_cleanup="yes"
 
 depend() {
-    after docker net sysctl
+    after docker net net-online sysctl
     use net
 }
 
@@ -101,7 +101,6 @@ reload() {
 	eend $?
 }' > /etc/init.d/dae
     chmod +x /etc/init.d/dae
-    rc-update add dae default
     echo "${GREEN}OpenRC service installed/updated,${RESET}"
     echo "${GREEN}you can start dae by running:${RESET}"
     echo "${GREEN}rc-service dae start${RESET}"
