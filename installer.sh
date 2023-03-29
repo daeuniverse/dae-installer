@@ -113,7 +113,7 @@ start_pre() {
 
 reload() {
 	ebegin "Reloading $RC_SVCNAME"
-	/usr/bin/local/dae reload $(cat "/run/${RC_SVCNAME}.pid")
+	/usr/local/bin/dae reload $(cat "/run/${RC_SVCNAME}.pid")
 	eend $?
 }' > /etc/init.d/dae
     chmod +x /etc/init.d/dae
