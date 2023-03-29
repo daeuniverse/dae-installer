@@ -67,7 +67,7 @@ LimitNPROC=512
 LimitNOFILE=1048576
 ExecStartPre=/usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae
 ExecStart=/usr/local/bin/dae run --disable-timestamp -c /usr/local/etc/dae/config.dae
-ExecReload=/usr/bin/local/dae reload $MAINPID
+ExecReload=/usr/local/bin/dae reload $MAINPID
 Restart=on-abnormal
 
 [Install]
