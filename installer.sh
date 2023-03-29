@@ -16,18 +16,23 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-## Check curl, unzip, jq
-for tool_need in curl unzip jq; do
+## Check curl, unzip, jq, virt-what
+for tool_need in curl unzip jq virt-what; do
     if ! command -v $tool_need > /dev/null 2>&1; then
         if command -v apt > /dev/null 2>&1; then
         apt update; apt install $tool_need -y
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v dnf > /dev/null 2>&1; then
         dnf install $tool_need -y
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v yum > /dev/null  2>&1; then
         yum install $tool_need -y
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v zypper > /dev/null 2>&1; then
         zypper install --non-interactive $tool_need
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v pacman > /dev/null 2>&1; then
+        echo $tool_need >> /tmp/tool_installed.txt
         pacman -S $tool_need --noconfirm
         else
         echo "$tool_need not installed, stop installation, please install $tool_need and try again!"
@@ -36,6 +41,17 @@ for tool_need in curl unzip jq; do
     fi
 done
 
+check_virtualization() {
+    if [[ $(virt-what) == 'openvz' ]]; then
+        echo "${RED}error: OpenVZ is not supported!${RESET}"
+        we_should_exit=1
+    fi
+    if [ "$(virt-what)" == '' ]; then
+        is_virt=no
+    else
+        is_virt=yes
+    fi
+}
 
 install_systemd_service() {
     echo "${GREEN}Installing/updating systemd service...${RESET}"
@@ -168,7 +184,9 @@ case "$(uname -m)" in
         exit 1
         ;;
     esac
-    if [[ "$AMD64" == 'yes' ]]; then
+    if [[ "$AMD64" == 'yes' ]] && [[ "$is_virt" == 'yes' ]]; then
+        MACHINE='x86_64'
+    elif [[ "$AMD64" == 'yes' ]]; then
         if [ -n "$(cat /proc/cpuinfo | grep avx2)" ]; then
             MACHINE='x86_64_v3_avx2'
         elif [ -n "$(cat /proc/cpuinfo | grep sse)" ]; then
@@ -339,6 +357,7 @@ download_example_config() {
 }
 
 installation() {
+    check_virtualization
     if [ "$we_should_exit" == "1" ]; then
         exit 1
     fi
@@ -368,6 +387,12 @@ installation() {
     echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
     if [ ! -f /usr/local/etc/dae/config.dae ]; then
         download_example_config
+    fi
+    if [ -f tool_installed.txt ] && [ -n "$(cat /tmp/tool_installed.txt)" ]; then
+        echo "${GREEN}You have installed the following tools during installation:${RESET}"
+        cat /tmp/tool_installed.txt
+        rm -f /tmp/tool_installed.txt
+        echo "${GREEN}You can uninstall them now if you want.${RESET}"
     fi
 }
 # Main
