@@ -137,9 +137,9 @@ check_version(){
         echo "${RED}Please check your network and try again.${RESET}"
         we_should_exit=1
     else
-    	cat $temp_file
+    	# cat $temp_file
         latest_version=$(grep -i ^location: $temp_file|rev|cut -d/ -f1|rev)
-	latest_version=${latest_version%$'\r'} # Trim suffix \r
+	    latest_version=${latest_version%$'\r'} # Trim suffix \r
     fi
 }
 
@@ -367,6 +367,10 @@ installation() {
     if [ "$current_version" == "$latest_version" ]; then
         echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
         exit 0
+    elif [ "$current_version" == '0' ]; then
+        echo "${GREEN}Installing dae version $latest_version... ${RESET}"
+    else
+        echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
     fi
     check_arch
     download_dae
