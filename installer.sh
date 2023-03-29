@@ -29,7 +29,7 @@ for tool_need in curl unzip virt-what; do
         yum install $tool_need -y
         echo $tool_need >> /tmp/tool_installed.txt
         elif command -v zypper > /dev/null 2>&1; then
-        zypper install --non-interactive $tool_need
+        zypper --non-interactive install $tool_need
         echo $tool_need >> /tmp/tool_installed.txt
         elif command -v pacman > /dev/null 2>&1; then
         echo $tool_need >> /tmp/tool_installed.txt
