@@ -343,6 +343,7 @@ install_dae() {
     mv /usr/local/bin/dae-linux-$MACHINE /usr/local/bin/dae
     chmod +x /usr/local/bin/dae
     rm -f dae-linux-$MACHINE.zip
+    echo "${GREEN}dae installed${RESET}"
 }
 
 download_example_config() {
