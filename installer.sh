@@ -75,9 +75,9 @@ WantedBy=multi-user.target' > /etc/systemd/system/dae.service
     systemctl daemon-reload
     echo "${GREEN}Systemd service installed/updated,${RESET}"
     echo "${GREEN}you can start dae by running:${RESET}"
-    echo "${GREEN}systemctl start dae${RESET}"
+    echo "systemctl start dae"
     echo "${GREEN}if you want to start dae at system boot:${RESET}"
-    echo "${GREEN}systemctl enable dae${RESET}"
+    echo "systemctl enable dae"
 }
 
 install_openrc_service(){
@@ -119,9 +119,9 @@ reload() {
     chmod +x /etc/init.d/dae
     echo "${GREEN}OpenRC service installed/updated,${RESET}"
     echo "${GREEN}you can start dae by running:${RESET}"
-    echo "${GREEN}rc-service dae start${RESET}"
+    echo "rc-service dae start"
     echo "${GREEN}if you want to start dae at system boot:${RESET}"
-    echo "${GREEN}rc-update add dae default${RESET}"
+    echo "rc-update add dae default"
 }
 
 check_version(){
@@ -390,7 +390,7 @@ installation() {
     fi
     start_dae
     echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
-    echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
+    echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
     if [ ! -f /usr/local/etc/dae/config.dae ]; then
         download_example_config
     fi
