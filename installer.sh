@@ -16,18 +16,23 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-## Check curl, unzip, jq
-for tool_need in curl unzip jq; do
+## Check curl, unzip, virt-what
+for tool_need in curl unzip virt-what; do
     if ! command -v $tool_need > /dev/null 2>&1; then
         if command -v apt > /dev/null 2>&1; then
         apt update; apt install $tool_need -y
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v dnf > /dev/null 2>&1; then
         dnf install $tool_need -y
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v yum > /dev/null  2>&1; then
         yum install $tool_need -y
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v zypper > /dev/null 2>&1; then
         zypper --non-interactive install $tool_need
+        echo $tool_need >> /tmp/tool_installed.txt
         elif command -v pacman > /dev/null 2>&1; then
+        echo $tool_need >> /tmp/tool_installed.txt
         pacman -S $tool_need --noconfirm
         else
         echo "$tool_need not installed, stop installation, please install $tool_need and try again!"
@@ -36,6 +41,17 @@ for tool_need in curl unzip jq; do
     fi
 done
 
+check_virtualization() {
+    if [[ $(virt-what) == 'openvz' ]]; then
+        echo "${RED}error: OpenVZ is not supported!${RESET}"
+        we_should_exit=1
+    fi
+    if [ "$(virt-what)" == '' ]; then
+        is_virt=no
+    else
+        is_virt=yes
+    fi
+}
 
 install_systemd_service() {
     echo "${GREEN}Installing/updating systemd service...${RESET}"
@@ -78,7 +94,7 @@ rc_ulimit="-n 30000"
 rc_cgroup_cleanup="yes"
 
 depend() {
-    after docker net sysctl
+    after docker net net-online sysctl
     use net
 }
 
@@ -101,7 +117,6 @@ reload() {
 	eend $?
 }' > /etc/init.d/dae
     chmod +x /etc/init.d/dae
-    rc-update add dae default
     echo "${GREEN}OpenRC service installed/updated,${RESET}"
     echo "${GREEN}you can start dae by running:${RESET}"
     echo "${GREEN}rc-service dae start${RESET}"
@@ -115,13 +130,16 @@ check_version(){
     else
     current_version=$(/usr/local/bin/dae --version | awk '{print $3}')
     fi
-    if ! curl -s 'https://api.github.com/repos/daeuniverse/dae/releases/latest' -o /tmp/dae.json; then
+    temp_file=$(mktemp /tmp/dae_version.XXXXX)
+    trap "rm -f '$temp_file'" exit
+    if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         we_should_exit=1
     else
-        latest_version=$(jq -r '.tag_name' /tmp/dae.json)
-        rm -f /tmp/dae.json
+    	cat $temp_file
+        latest_version=$(grep -i ^location: $temp_file|rev|cut -d/ -f1|rev)
+	latest_version=${latest_version%$'\r'} # Trim suffix \r
     fi
 }
 
@@ -169,7 +187,9 @@ case "$(uname -m)" in
         exit 1
         ;;
     esac
-    if [[ "$AMD64" == 'yes' ]]; then
+    if [[ "$AMD64" == 'yes' ]] && [[ "$is_virt" == 'yes' ]]; then
+        MACHINE='x86_64'
+    elif [[ "$AMD64" == 'yes' ]]; then
         if [ -n "$(cat /proc/cpuinfo | grep avx2)" ]; then
             MACHINE='x86_64_v3_avx2'
         elif [ -n "$(cat /proc/cpuinfo | grep sse)" ]; then
@@ -217,6 +237,7 @@ download_geoip() {
     fi
 }
 update_geoip() {
+    check_share_dir
     mv geoip.dat /usr/local/share/dae/
     rm -f geoip.dat.sha256sum
     echo "${GREEN}GeoIP database have been updated.${RESET}"
@@ -250,13 +271,14 @@ download_geosite() {
 }
 
 update_geosite() {
+    check_share_dir
     mv geosite.dat /usr/local/share/dae/
     rm -f geosite.dat.sha256sum
     echo "${GREEN}GeoSite database have been updated.${RESET}"
 }
 
 stop_dae(){
-    if [ -f /etc/systemd/system/dae.service ] && [ -f /run/dae.pid ] && [ -n "$(cat /run/dae.pid)" ]; then
+    if [ "$(systemctl is-active dae)" == "active" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         systemctl stop dae
         dae_stopped=1
@@ -338,6 +360,7 @@ download_example_config() {
 }
 
 installation() {
+    check_virtualization
     if [ "$we_should_exit" == "1" ]; then
         exit 1
     fi
@@ -367,6 +390,12 @@ installation() {
     echo "${GREEN}Your config file should be: /usr/local/etc/dae/config.dae${RESET}"
     if [ ! -f /usr/local/etc/dae/config.dae ]; then
         download_example_config
+    fi
+    if [ -f tool_installed.txt ] && [ -n "$(cat /tmp/tool_installed.txt)" ]; then
+        echo "${GREEN}You have installed the following tools during installation:${RESET}"
+        cat /tmp/tool_installed.txt
+        rm -f /tmp/tool_installed.txt
+        echo "${GREEN}You can uninstall them now if you want.${RESET}"
     fi
 }
 # Main
