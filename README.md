@@ -9,11 +9,19 @@ If you are root:
 bash <(curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/installer.sh) install
 ```
 
-If you are not root but you can use sudo:
+If you are not root but you can use `sudo`:
 
 ```sh
 sudo bash -c "$(curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/installer.sh)" @ install
 ```
+
+If you want to remove dae：😢
+
+```sh
+curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/uninstaller.sh | bash
+```
+
+Use `sudo bash` if you are not root but you can use `sudo`.
 
 ## Commands
 
