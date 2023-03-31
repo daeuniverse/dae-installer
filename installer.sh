@@ -44,7 +44,7 @@ done
 check_virtualization() {
     if [[ $(virt-what) == 'openvz' ]]; then
         echo "${RED}error: OpenVZ is not supported!${RESET}"
-        we_should_exit=1
+        exit 1
     fi
     if [ "$(virt-what)" == '' ]; then
         is_virt=no
@@ -360,10 +360,10 @@ download_example_config() {
 
 installation() {
     check_virtualization
+    check_version
     if [ "$we_should_exit" == "1" ]; then
         exit 1
     fi
-    check_version
     if [ "$current_version" == "$latest_version" ]; then
         echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
         exit 0
