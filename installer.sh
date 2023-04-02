@@ -42,11 +42,15 @@ for tool_need in curl unzip virt-what; do
 done
 
 check_virtualization() {
+    if [ -n "$(uname -r | grep microsoft)" ]; then
+        echo "${RED}error: WSL is not supported!${RESET}"
+        exit 1
+    fi
     if [[ $(virt-what) == 'openvz' ]]; then
         echo "${RED}error: OpenVZ is not supported!${RESET}"
         exit 1
     fi
-    if [ "$(virt-what)" == '' ]; then
+    if [[ "$(virt-what)" == '' ]]; then
         is_virt=no
     else
         is_virt=yes
@@ -106,7 +110,7 @@ start_pre() {
    ln -s "/tmp/dae/" "/var/log/"
    fi
    if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
-      eerror "dae config file /usr/local/etc/dae/config.dae is invalid, exiting"
+      eerror "dae config file /usr/local/etc/dae/config.dae is invalid or too open, exiting..."
       return 1
    fi
 }
