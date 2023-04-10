@@ -365,7 +365,7 @@ download_dae() {
 
 install_dae() {
     unzip dae-linux-"$MACHINE".zip -d ./dae/
-    mv ./dae/dae-linux-"$MACHINE" /usr/local/bin/dae
+    cp ./dae/dae-linux-"$MACHINE" /usr/local/bin/dae
     chmod +x /usr/local/bin/dae
     rm -f dae-linux-"$MACHINE".zip
     rm -rf dae
