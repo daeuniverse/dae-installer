@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
@@ -20,22 +20,43 @@ fi
 for tool_need in curl unzip virt-what; do
     if ! command -v $tool_need > /dev/null 2>&1; then
         if command -v apt > /dev/null 2>&1; then
-        apt update; apt install $tool_need -y
+            if ! apt update && apt install $tool_need -y; then
+            echo "${RED}""Run apt to install $tool_need failed, please try again!""${RESET}"
+            exit 1
+            fi
         echo $tool_need >> /tmp/tool_installed.txt
         elif command -v dnf > /dev/null 2>&1; then
-        dnf install $tool_need -y
+            if ! dnf install $tool_need -y; then
+            echo "${RED}""Run dnf to install $tool_need failed, please try again!""${RESET}"
+            exit 1
+            fi            
         echo $tool_need >> /tmp/tool_installed.txt
         elif command -v yum > /dev/null  2>&1; then
-        yum install $tool_need -y
+            if ! yum install $tool_need -y; then
+            echo "${RED}""Run yum to install $tool_need failed, please try again!""${RESET}"
+            exit 1
+            fi
         echo $tool_need >> /tmp/tool_installed.txt
         elif command -v zypper > /dev/null 2>&1; then
-        zypper --non-interactive install $tool_need
+            if ! zypper --non-interactive install $tool_need; then
+            echo "${RED}""Run zypper to install $tool_need failed, please try again!""${RESET}"
+            exit 1
+            fi            
         echo $tool_need >> /tmp/tool_installed.txt
         elif command -v pacman > /dev/null 2>&1; then
+            if ! pacman -Sy $tool_need --noconfirm; then
+            echo "${RED}""Run pacman to install $tool_need failed, please try again!""${RESET}"
+            exit 1
+            fi
         echo $tool_need >> /tmp/tool_installed.txt
-        pacman -S $tool_need --noconfirm
+        elif command -v apk > /dev/null 2>&1; then
+            if ! apk add $tool_need; then
+            echo "${RED}""Run apk to install $tool_need failed, please try again!""${RESET}"
+            exit 1
+            fi
+        echo $tool_need >> /tmp/tool_installed.txt
         else
-        echo "$tool_need not installed, stop installation, please install $tool_need and try again!"
+        echo "$tool_need not installed and cannot be installed automatically, stop installation, please install $tool_need and try again!"
         we_should_exit=1
         fi
     fi
