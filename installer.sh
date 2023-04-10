@@ -34,6 +34,9 @@ for tool_need in curl unzip virt-what; do
         elif command -v pacman > /dev/null 2>&1; then
         echo $tool_need >> /tmp/tool_installed.txt
         pacman -S $tool_need --noconfirm
+        elif command -v apk > /dev/null 2>&1; then
+        echo $tool_need >> /tmp/tool_installed.txt
+        apk add $tool_need
         else
         echo "$tool_need not installed, stop installation, please install $tool_need and try again!"
         we_should_exit=1
@@ -92,8 +95,8 @@ command="/usr/local/bin/dae"
 command_args="run -c /usr/local/etc/dae/config.dae"
 pidfile="/run/${RC_SVCNAME}.pid"
 command_background="yes"
-output_log="/var/log/dae-access.log"
-error_log="/var/log/dae-error.log"
+output_log="/var/log/dae/access.log"
+error_log="/var/log/dae/error.log"
 rc_ulimit="-n 30000"
 rc_cgroup_cleanup="yes"
 
