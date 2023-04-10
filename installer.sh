@@ -142,7 +142,7 @@ check_version(){
         we_should_exit=1
     else
     	# cat $temp_file
-        latest_version=$(grep -i ^location: $temp_file|rev|cut -d/ -f1|rev)
+        latest_version=$(grep -i ^location: "$temp_file"|rev|cut -d/ -f1|rev)
 	    latest_version=${latest_version%$'\r'} # Trim suffix \r
     fi
 }
@@ -313,40 +313,41 @@ download_dae() {
     download_url=https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip
     echo "${GREEN}Downloading dae...${RESET}"
     echo "${GREEN}Downloading from: $download_url${RESET}"
-    if ! curl -LO $download_url --progress-bar; then
+    if ! curl -LO "$download_url" --progress-bar; then
         echo "${RED}error: Failed to download dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     fi
-    local_sha256=$(sha256sum dae-linux-$MACHINE.zip | awk -F ' ' '{print $1}')
+    local_sha256=$(sha256sum dae-linux-"$MACHINE".zip | awk -F ' ' '{print $1}')
     if [ -z "$local_sha256" ]; then
         echo "${RED}error: Failed to get the checksum of the downloaded file!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f dae-linux-$MACHINE.zip
+        rm -f dae-linux-"$MACHINE".zip
         exit 1
     fi
-    if ! curl -sL $download_url.dgst -o dae-linux-$MACHINE.zip.dgst; then
+    if ! curl -sL "$download_url".dgst -o dae-linux-"$MACHINE".zip.dgst; then
         echo "${RED}error: Failed to download the checksum file!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f dae-linux-$MACHINE.zip.dgst
+        rm -f dae-linux-"$MACHINE".zip.dgst
         exit 1
     fi
-    remote_sha256=$(cat ./dae-linux-$MACHINE.zip.dgst | awk -F "./dae-linux-$MACHINE.zip" 'NR==3' | awk '{print $1}')
+    remote_sha256=$(cat ./dae-linux-"$MACHINE".zip.dgst | awk -F "./dae-linux-$MACHINE.zip" 'NR==3' | awk '{print $1}')
     if [ "$local_sha256" != "$remote_sha256" ]; then
         echo "${RED}error: The checksum of the downloaded file does not match!${RESET}"
         echo "${RED}Local SHA256: $local_sha256${RESET}"
         echo "${RED}Remote SHA256: $remote_sha256${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f dae-linux-$MACHINE.zip
+        rm -f dae-linux-"$MACHINE".zip
         exit 1
     fi
 }
 
 install_dae() {
-    unzip dae-linux-$MACHINE.zip -d /usr/local/bin/
-    mv /usr/local/bin/dae-linux-$MACHINE /usr/local/bin/dae
+    unzip dae-linux-"$MACHINE".zip -d ./dae/
+    mv ./dae/dae-linux-"$MACHINE" /usr/local/bin/dae
     chmod +x /usr/local/bin/dae
-    rm -f dae-linux-$MACHINE.zip
+    rm -f dae-linux-"$MACHINE".zip
+    rm -rf dae
 }
 
 download_example_config() {
@@ -406,38 +407,6 @@ installation() {
     fi
 }
 # Main
-current_dir=$(pwd)
-cd /tmp/
-if [ "$1" == "update-geoip" ]; then
-    download_geoip
-    update_geoip
-elif [ "$1" == "update-geosite" ]; then
-    download_geosite
-    update_geosite
-elif [ "$1" == "install" ]; then
-    installation
-fi
-if [ "$2" == "update-geoip" ]; then
-    download_geoip
-    update_geoip
-elif [ "$2" == "update-geosite" ]; then
-    download_geosite
-    update_geosite
-elif [ "$2" == "install" ]; then
-    installation
-fi
-if [ "$3" == "update-geoip" ]; then
-    download_geoip
-    update_geoip
-elif [ "$3" == "update-geosite" ]; then
-    download_geosite
-    update_geosite
-elif [ "$3" == "install" ]; then
-    installation
-elif [ "$1" == "" ]; then
-    installation
-fi
-cd $current_dir
 if ! [ "$1" == "update-geoip" ] && ! [ "$1" == "update-geosite" ] && ! [ "$1" == "install" ] && ! [ "$1" == "" ]; then
     echo "${YELLOW}error: Invalid argument, usage:${RESET}"
     echo "${YELLOW}Run 'install.sh install' to install dae,${RESET}"
@@ -445,3 +414,21 @@ if ! [ "$1" == "update-geoip" ] && ! [ "$1" == "update-geosite" ] && ! [ "$1" ==
     echo "${YELLOW}Run 'install.sh update-geosite' to update GeoSite database.${RESET}"
     exit 1
 fi
+current_dir=$(pwd)
+cd /tmp/
+if [ "$1" == "" ]; then
+    installation
+fi
+while [ $# != 0 ] ; do
+    if [ "$1" == "update-geoip" ]; then
+        download_geoip
+        update_geoip
+    elif [ "$1" == "update-geosite" ]; then
+        download_geosite
+        update_geosite
+    elif [ "$1" == "install" ]; then
+        installation
+    fi
+    shift
+done
+cd "$current_dir"
