@@ -20,7 +20,7 @@ fi
 for tool_need in curl unzip virt-what; do
     if ! command -v $tool_need > /dev/null 2>&1; then
         if command -v apt > /dev/null 2>&1; then
-            if ! apt update && apt install $tool_need -y; then
+            if ! apt install $tool_need -y; then
             echo "${RED}""Run apt to install $tool_need failed, please try again!""${RESET}"
             exit 1
             fi
