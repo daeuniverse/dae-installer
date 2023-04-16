@@ -265,7 +265,7 @@ update_geoip() {
     check_share_dir
     mv geoip.dat /usr/local/share/dae/
     rm -f geoip.dat.sha256sum
-    echo "${GREEN}GeoIP database have been updated.${RESET}"
+    echo "${GREEN}GeoIP database have been installed/updated.${RESET}"
 }
 
 download_geosite() {
@@ -299,7 +299,7 @@ update_geosite() {
     check_share_dir
     mv geosite.dat /usr/local/share/dae/
     rm -f geosite.dat.sha256sum
-    echo "${GREEN}GeoSite database have been updated.${RESET}"
+    echo "${GREEN}GeoSite database have been installed/updated.${RESET}"
 }
 
 stop_dae(){
@@ -369,6 +369,7 @@ install_dae() {
     chmod +x /usr/local/bin/dae
     rm -f dae-linux-"$MACHINE".zip
     rm -rf dae
+    echo "${GREEN}dae have been installed/updated.${RESET}"
 }
 
 download_example_config() {
