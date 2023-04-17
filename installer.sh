@@ -378,7 +378,7 @@ download_example_config() {
     fi
     if ! curl -sL "https://github.com/daeuniverse/dae/raw/$latest_version/example.dae" -o /usr/local/etc/dae/example.dae; then
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
-        echo "${YELLOW}You can download it from https://raw.githubusercontent.com/daeuniverse/dae/main/example.dae${RESET}"
+        echo "${YELLOW}You can download it from \"https://github.com/daeuniverse/dae/raw/$latest_version/example.dae\"${RESET}"
     else
         echo "${GREEN}Example config file downloaded to /usr/local/etc/dae/example.dae, you can edit it and save it to /usr/local/etc/dae/config.dae${RESET}"
     fi
