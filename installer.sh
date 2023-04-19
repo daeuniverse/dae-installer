@@ -157,7 +157,7 @@ check_version(){
     current_version=$(/usr/local/bin/dae --version | awk '{print $3}')
     fi
     temp_file=$(mktemp /tmp/dae_version.XXXXX)
-    trap "rm -f '$temp_file'" exit
+    trap 'rm -f "$temp_file"' 0 1 2 3
     if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
