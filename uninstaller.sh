@@ -63,7 +63,7 @@ remove_dae_service(){
 stop_dae
 if [ "$dae_stopped" != '1' ]; then
     echo "${YELLOW}Stop dae failed, you might stop dae and try again.${RESET}"
-    return 1
+    exit 1
 fi
 remove_dae
 remove_dae_service
