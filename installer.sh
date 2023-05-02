@@ -115,6 +115,7 @@ pidfile="/run/${RC_SVCNAME}.pid"
 command_background="yes"
 output_log="/var/log/dae/access.log"
 error_log="/var/log/dae/error.log"
+supervisor="supervise-daemon"
 rc_ulimit="-n 30000"
 rc_cgroup_cleanup="yes"
 
@@ -365,7 +366,8 @@ download_dae() {
 }
 
 install_dae() {
-    unzip dae-linux-"$MACHINE".zip -d ./dae/
+    echo "${GREEN}unzipping dae's zip file...${RESET}"
+    unzip dae-linux-"$MACHINE".zip -d ./dae/ >> /dev/null
     cp ./dae/dae-linux-"$MACHINE" /usr/local/bin/dae
     chmod +x /usr/local/bin/dae
     rm -f dae-linux-"$MACHINE".zip
@@ -416,7 +418,7 @@ installation() {
         echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
     start_dae
-    echo "${GREEN}dae installed, installed version: $latest_version${RESET}"
+    echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
     if [ ! -f /usr/local/etc/dae/config.dae ]; then
         download_example_config
