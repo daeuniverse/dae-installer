@@ -20,13 +20,11 @@ stop_dae(){
     if [ "$(systemctl is-active dae)" == "active" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         systemctl stop dae
-        dae_stopped=1
         echo "${GREEN}Stopped dae${RESET}"
     fi
     if [ -f /etc/init.d/dae ] && [ -f /run/dae.pid ] && [ -n "$(cat /run/dae.pid)" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         /etc/init.d/dae stop
-        dae_stopped="1"
         echo "${GREEN}Stopped dae${RESET}"
     fi
 }
@@ -60,8 +58,7 @@ remove_dae_service(){
 }
 
 # Main
-stop_dae
-if [ "$dae_stopped" != '1' ]; then
+if ! stop_dae; then
     echo "${YELLOW}Stop dae failed, you might stop dae and try again.${RESET}"
     exit 1
 fi
