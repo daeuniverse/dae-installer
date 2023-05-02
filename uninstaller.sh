@@ -61,11 +61,15 @@ remove_dae_service(){
 
 # Main
 stop_dae
+if [ "$dae_stopped" != '1' ]; then
+    echo "${YELLOW}Stop dae failed, you might stop dae and try again.${RESET}"
+    return 1
+fi
 remove_dae
 remove_dae_service
 echo "${GREEN}Uninstall dae successfully!${RESET}"
 if [ -d /usr/local/etc/dae ]; then
     echo "${GREEN}However, your config file is in this path:${RESET}"
-    echo "/usr/local/etc/dae"
+    echo "/usr/local/etc/dae/"
     echo "${GREEN}You can remove this folder manually if you want.${RESET}"
 fi
