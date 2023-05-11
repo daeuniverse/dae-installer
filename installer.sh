@@ -393,6 +393,14 @@ installation() {
     if [ "$current_version" == "$latest_version" ]; then
         echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
         notice_installled_tool
+        if [ "$geoip_should_update" == 'yes' ]; then
+            download_geoip
+            update_geoip    
+        fi
+        if [ "$geosite_should_update" == 'yes' ]; then
+            download_geosite
+            update_geosite
+        fi
         exit 0
     elif [ "$current_version" == '0' ]; then
         echo "${GREEN}Installing dae version $latest_version... ${RESET}"
@@ -462,4 +470,4 @@ if [ "$geosite_should_update" == 'yes' ]; then
     download_geosite
     update_geosite
 fi
-cd "$current_dir"
+trap 'cd "$current_dir"' 0 1 2 3
