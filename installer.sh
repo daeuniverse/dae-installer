@@ -424,33 +424,42 @@ installation() {
     notice_installled_tool
 }
 # Main
-if ! [ "$1" == "update-geoip" ] && ! [ "$1" == "update-geosite" ] && ! [ "$1" == "install" ] && ! [ "$1" == "force-install" ] && ! [ "$1" == "" ]; then
-    echo "${RED}Invalid argument, usage:${RESET}"
-    echo "${YELLOW}install             install/update dae if there is no dae or dae version is older than GitHub releases${RESET}"
-    echo "${YELLOW}force-install       install/update dae without checking dae version${RESET}"
-    echo "${YELLOW}update-geoip        update GeoIP database (it will be already installed if you have installed dae)${RESET}"
-    echo "${YELLOW}update-geosite      update GeoSite database (it will be already installed if you have installed dae)${RESET}"
-    exit 1
-fi
 current_dir=$(pwd)
 cd /tmp/
 if [ "$1" == "" ]; then
     installation
 fi
 while [ $# != 0 ] ; do
+    if ! [ "$1" == "update-geoip" ] && ! [ "$1" == "update-geosite" ] && ! [ "$1" == "install" ] && ! [ "$1" == "force-install" ] && ! [ "$1" == "" ]; then
+        echo "${RED}Invalid argument: ${RESET}""$1"
+        echo "${YELLOW}Usage:${RESET}"
+        echo "${YELLOW}install${RESET}             install/update dae if there is no dae or dae version is older than GitHub releases"
+        echo "${YELLOW}force-install${RESET}       install/update dae without checking dae version"
+        echo "${YELLOW}update-geoip${RESET}        update GeoIP database (it will be already installed if you have installed dae)"
+        echo "${YELLOW}update-geosite${RESET}      update GeoSite database (it will be already installed if you have installed dae)"
+        exit 1
+    fi
     if [ "$1" == "force-install" ]; then
         force_install="yes"
-        installation
     fi
     if [ "$1" == "update-geoip" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
-        download_geoip
-        update_geoip
+        geoip_should_update="yes"
     elif [ "$1" == "update-geosite" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
-        download_geosite
-        update_geosite
+        geosite_should_update="yes"
     elif [ "$1" == "install" ] && [ "$force_install" != "yes" ]; then
-        installation
+        normal_install="yes"
     fi
     shift
 done
+if [ "$force_install" == 'yes' ] || [ "$normal_install" == 'yes' ]; then
+    installation
+fi
+if [ "$geoip_should_update" == 'yes' ]; then
+    download_geoip
+    update_geoip    
+fi
+if [ "$geosite_should_update" == 'yes' ]; then
+    download_geosite
+    update_geosite
+fi
 cd "$current_dir"
