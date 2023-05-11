@@ -440,12 +440,7 @@ fi
 while [ $# != 0 ] ; do
     if ! [ "$1" == "update-geoip" ] && ! [ "$1" == "update-geosite" ] && ! [ "$1" == "install" ] && ! [ "$1" == "force-install" ] && ! [ "$1" == "" ]; then
         echo "${RED}Invalid argument: ${RESET}""$1"
-        echo "${YELLOW}Usage:${RESET}"
-        echo "${YELLOW}install${RESET}             install/update dae if there is no dae or dae version is older than GitHub releases"
-        echo "${YELLOW}force-install${RESET}       install/update dae without checking dae version"
-        echo "${YELLOW}update-geoip${RESET}        update GeoIP database (it will be already installed if you have installed dae)"
-        echo "${YELLOW}update-geosite${RESET}      update GeoSite database (it will be already installed if you have installed dae)"
-        exit 1
+        notice_usage="yes"
     fi
     if [ "$1" == "force-install" ]; then
         force_install="yes"
@@ -459,6 +454,14 @@ while [ $# != 0 ] ; do
     fi
     shift
 done
+if [ "$notice_usage" == 'yes' ]; then
+    echo "${YELLOW}Usage:${RESET}"
+    echo "${YELLOW}install${RESET}             install/update dae if there is no dae or dae version is older than GitHub releases"
+    echo "${YELLOW}force-install${RESET}       install/update dae without checking dae version"
+    echo "${YELLOW}update-geoip${RESET}        update GeoIP database (it will be already installed if you have installed dae)"
+    echo "${YELLOW}update-geosite${RESET}      update GeoSite database (it will be already installed if you have installed dae)"
+    exit 1
+fi
 if [ "$force_install" == 'yes' ] || [ "$normal_install" == 'yes' ]; then
     installation
 fi
