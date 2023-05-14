@@ -24,20 +24,24 @@ for tool in curl unzip virt-what; do
 done
 if [ -n "$tool_need" ]; then
     if command -v apt > /dev/null 2>&1; then
-        /bin/sh -c "apt update; apt install $tool_need -y"
+        command_install_tool="apt update; apt install $tool_need -y"
     elif command -v dnf > /dev/null 2>&1; then
-        /bin/sh -c "dnf install $tool_need -y"
+        command_install_tool="dnf install $tool_need -y"
     elif command -v yum > /dev/null  2>&1; then
-        /bin/sh -c "yum install $tool_need -y"
+        command_install_tool="yum install $tool_need -y"
     elif command -v zypper > /dev/null 2>&1; then
-        /bin/sh -c "zypper --non-interactive install $tool_need"
+        command_install_tool="zypper --non-interactive install $tool_need"
     elif command -v pacman > /dev/null 2>&1; then
-        /bin/sh -c "pacman -Sy $tool_need --noconfirm"
+        command_install_tool="pacman -Sy $tool_need --noconfirm"
     elif command -v apk > /dev/null 2>&1; then
-        /bin/sh -c "apk add $tool_need"
+        command_install_tool="apk add $tool_need"
     else
         echo "$RED""You should install $tool_need then try again.""$RESET"
         exit 1
+    fi
+    if ! /bin/bash -c "$command_install_tool";then
+        echo "$RED""Use system package manager to install $tool_need failed,""$RESET"
+        echo "$RED""You should install $tool_need then try again.""$RESET"
     fi
 fi
 
@@ -441,7 +445,7 @@ show_helps() {
 current_dir=$(pwd)
 cd /tmp/ || (echo "${YELLOW}Failed to cd /tmp/${RESET}";exit 1)
 if [ "$1" == "" ]; then
-    installation
+    should_we_install_dae
 fi
 while [ $# != 0 ] ; do
     if [ "$1" != "update-geoip" ] && [ "$1" != "update-geosite" ] && [ "$1" != "install" ] && [ "$1" != "force-install" ] && [ "$1" != "help" ] && [ "$1" != "" ]; then
