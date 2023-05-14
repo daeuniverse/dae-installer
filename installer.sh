@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+# set -x
 
 ## Color
 if command -v tput > /dev/null 2>&1; then
@@ -24,7 +24,7 @@ for tool in curl unzip virt-what; do
 done
 if [ -n "$tool_need" ]; then
     if command -v apt > /dev/null 2>&1; then
-        /bin/sh -c "apt install $tool_need -y"
+        /bin/sh -c "apt update; apt install $tool_need -y"
     elif command -v dnf > /dev/null 2>&1; then
         /bin/sh -c "dnf install $tool_need -y"
     elif command -v yum > /dev/null  2>&1; then
@@ -379,34 +379,6 @@ download_example_config() {
 }
 
 installation() {
-    check_virtualization
-    if [ "$force_install" == 'yes' ]; then
-        check_online_version
-        current_version='0'
-    else
-        check_local_version
-        check_online_version
-    fi
-    if [ "$we_should_exit" == "1" ]; then
-        exit 1
-    fi
-    if [ "$current_version" == "$latest_version" ]; then
-        echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
-        notice_installled_tool
-        if [ "$geoip_should_update" == 'yes' ]; then
-            download_geoip
-            update_geoip    
-        fi
-        if [ "$geosite_should_update" == 'yes' ]; then
-            download_geosite
-            update_geosite
-        fi
-        exit 0
-    elif [ "$current_version" == '0' ]; then
-        echo "${GREEN}Installing dae version $latest_version... ${RESET}"
-    else
-        echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
-    fi
     check_arch
     download_dae
     download_geoip
@@ -431,16 +403,49 @@ installation() {
     fi
     notice_installled_tool
 }
+
+should_we_install_dae() {
+    check_virtualization
+    if [ "$force_install" == 'yes' ]; then
+        check_online_version
+        current_version='0'
+    else
+        check_local_version
+        check_online_version
+    fi
+    if [ "$current_version" == "$latest_version" ]; then
+        echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
+        notice_installled_tool
+    elif [ "$current_version" == '0' ]; then
+        echo "${GREEN}Installing dae version $latest_version... ${RESET}"
+        installation
+    else
+        echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
+        installation
+    fi
+    if [ "$we_should_exit" == "1" ]; then
+        exit 1
+    fi
+}
+
+show_helps() {
+    echo -e "${GREEN}""\033[1;4mAvailable commands:\033[0m""${RESET}"
+    echo "${YELLOW}install${RESET}             install/update dae if there is no dae or dae version is older than GitHub releases"
+    echo "${YELLOW}force-install${RESET}       install/update dae without checking dae version"
+    echo "${YELLOW}update-geoip${RESET}        update GeoIP database (it will be already installed if you have installed dae)"
+    echo "${YELLOW}update-geosite${RESET}      update GeoSite database (it will be already installed if you have installed dae)"
+    echo "${YELLOW}help${RESET}                show this help message"
+}
 # Main
 current_dir=$(pwd)
-cd /tmp/
+cd /tmp/ || (echo "${YELLOW}Failed to cd /tmp/${RESET}";exit 1)
 if [ "$1" == "" ]; then
     installation
 fi
 while [ $# != 0 ] ; do
-    if ! [ "$1" == "update-geoip" ] && ! [ "$1" == "update-geosite" ] && ! [ "$1" == "install" ] && ! [ "$1" == "force-install" ] && ! [ "$1" == "" ]; then
+    if [ "$1" != "update-geoip" ] && [ "$1" != "update-geosite" ] && [ "$1" != "install" ] && [ "$1" != "force-install" ] && [ "$1" != "help" ] && [ "$1" != "" ]; then
         echo "${RED}Invalid argument: ${RESET}""$1"
-        notice_usage="yes"
+        error_help="yes"
     fi
     if [ "$1" == "force-install" ]; then
         force_install="yes"
@@ -451,25 +456,27 @@ while [ $# != 0 ] ; do
         geosite_should_update="yes"
     elif [ "$1" == "install" ] && [ "$force_install" != "yes" ]; then
         normal_install="yes"
+    elif [ "$1" == 'help' ]; then
+        show_help="yes"
     fi
     shift
 done
-if [ "$notice_usage" == 'yes' ]; then
-    echo "${YELLOW}Usage:${RESET}"
-    echo "${YELLOW}install${RESET}             install/update dae if there is no dae or dae version is older than GitHub releases"
-    echo "${YELLOW}force-install${RESET}       install/update dae without checking dae version"
-    echo "${YELLOW}update-geoip${RESET}        update GeoIP database (it will be already installed if you have installed dae)"
-    echo "${YELLOW}update-geosite${RESET}      update GeoSite database (it will be already installed if you have installed dae)"
+if [ "$show_help" == 'yes' ];then
+    show_helps
+    exit 0
+fi
+if [ "$error_help" == 'yes' ];then
+    show_helps
     exit 1
 fi
-if [ "$force_install" == 'yes' ] || [ "$normal_install" == 'yes' ]; then
-    installation
+if [ "$force_install" == 'yes' ] || [ "$normal_install" == 'yes' ];then
+    should_we_install_dae
 fi
-if [ "$geoip_should_update" == 'yes' ]; then
+if [ "$geoip_should_update" == 'yes' ];then
     download_geoip
     update_geoip    
 fi
-if [ "$geosite_should_update" == 'yes' ]; then
+if [ "$geosite_should_update" == 'yes' ];then
     download_geosite
     update_geosite
 fi

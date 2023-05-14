@@ -3,6 +3,10 @@ dae's install script, you can use it to eat dae! 😊
 
 ## Usage
 
+This script runs in `bash` and require `curl`, `unzip` and `virt-what` to work, these tools can be installed automaticly during installation in most Linux systems.
+
+### Install dae
+
 If you are root:
 
 ```sh
@@ -15,7 +19,7 @@ If you are not root but you can use `sudo`:
 sudo bash -c "$(curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/installer.sh)" @ install
 ```
 
-If you want to remove dae：😢
+### Uninstall dae
 
 ```sh
 curl -s https://raw.githubusercontent.com/daeuniverse/dae-installer/main/uninstaller.sh | bash
