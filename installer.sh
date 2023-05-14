@@ -436,6 +436,7 @@ show_helps() {
     echo "${YELLOW}update-geosite${RESET}      update GeoSite database (it will be already installed if you have installed dae)"
     echo "${YELLOW}help${RESET}                show this help message"
 }
+
 # Main
 current_dir=$(pwd)
 cd /tmp/ || (echo "${YELLOW}Failed to cd /tmp/${RESET}";exit 1)
@@ -480,4 +481,5 @@ if [ "$geosite_should_update" == 'yes' ];then
     download_geosite
     update_geosite
 fi
+
 trap 'cd "$current_dir"' 0 1 2 3
