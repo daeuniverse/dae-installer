@@ -433,12 +433,15 @@ should_we_install_dae() {
 }
 
 show_helps() {
+    echo -e "${GREEN}""\033[1;4mUsage:\033[0m""${RESET}"
+    echo "  installer.sh [command]"
+    echo ' '
     echo -e "${GREEN}""\033[1;4mAvailable commands:\033[0m""${RESET}"
-    echo "${YELLOW}install${RESET}             install/update dae if there is no dae or dae version is older than GitHub releases"
-    echo "${YELLOW}force-install${RESET}       install/update dae without checking dae version"
-    echo "${YELLOW}update-geoip${RESET}        update GeoIP database (it will be already installed if you have installed dae)"
-    echo "${YELLOW}update-geosite${RESET}      update GeoSite database (it will be already installed if you have installed dae)"
-    echo "${YELLOW}help${RESET}                show this help message"
+    echo "  install             install/update dae if there is no dae or dae version is not same as GitHub latest release"
+    echo "  force-install       install/update latest version of dae without checking local dae version"
+    echo "  update-geoip        update GeoIP database"
+    echo "  update-geosite      update GeoSite database"
+    echo "  help                show this help message"
 }
 
 # Main
