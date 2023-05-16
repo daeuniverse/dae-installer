@@ -42,6 +42,7 @@ if [ -n "$tool_need" ]; then
     if ! /bin/bash -c "$command_install_tool";then
         echo "$RED""Use system package manager to install $tool_need failed,""$RESET"
         echo "$RED""You should install $tool_need then try again.""$RESET"
+        exit 1
     fi
 fi
 
@@ -130,9 +131,11 @@ start_pre() {
 
 reload() {
     pid_dae="$(cat /run/${RC_SVCNAME}.pid)"
-	ebegin "Reloading $RC_SVCNAME"
-	/usr/local/bin/dae reload $pid_dae
-	eend $?
+    if [ -n "$pid_dae" ];then
+        ebegin "Reloading $RC_SVCNAME"
+        /usr/local/bin/dae reload $pid_dae
+        eend $?
+	fi
 }' > /etc/init.d/dae
     chmod +x /etc/init.d/dae
     echo "${GREEN}OpenRC service installed/updated,${RESET}"
@@ -156,7 +159,7 @@ check_online_version(){
     if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        we_should_exit=1
+        exit 1
     else
     	# cat $temp_file
         latest_version=$(grep -i ^location: "$temp_file"|rev|cut -d/ -f1|rev)
@@ -427,9 +430,9 @@ should_we_install_dae() {
         echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
         installation
     fi
-    if [ "$we_should_exit" == "1" ]; then
-        exit 1
-    fi
+#     if [ "$we_should_exit" == "1" ]; then
+#         exit 1
+#     fi
 }
 
 show_helps() {
