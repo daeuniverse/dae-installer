@@ -405,9 +405,7 @@ installation() {
     start_dae
     echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
-#    if [ ! -f /usr/local/etc/dae/config.dae ]; then
-        download_example_config
-#    fi
+    download_example_config
     notice_installled_tool
 }
 
