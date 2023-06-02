@@ -390,6 +390,7 @@ installation() {
     download_dae
     download_geoip
     download_geosite
+    download_example_config
     stop_dae
     install_dae
     update_geoip
@@ -405,7 +406,6 @@ installation() {
     start_dae
     echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
-    download_example_config
     notice_installled_tool
 }
 
