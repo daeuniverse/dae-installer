@@ -174,7 +174,6 @@ case "$(uname -m)" in
         MACHINE='x86_32'
         ;;
       'amd64' | 'x86_64')
-        # MACHINE='x86_64'
         AMD64='yes'
         ;;
       'armv5tel')
@@ -319,13 +318,21 @@ stop_dae(){
 start_dae(){
     if [ -f /etc/systemd/system/dae.service ] && [ "$dae_stopped" == "1" ]; then
         echo "${GREEN}Starting dae...${RESET}"
-        systemctl start dae
-        echo "${GREEN}Started dae${RESET}"
+        if ! systemctl start dae;then
+            echo "${RED}Failed to start dae!${RESET}"
+            echo "${RED}You should check your configuration file and try again.${RESET}"
+        else
+            echo "${GREEN}Started dae${RESET}"
+        fi
     fi
     if [ -f /etc/init.d/dae ] && [ "$dae_stopped" == "1" ]; then
         echo "${GREEN}Starting dae...${RESET}"
-        /etc/init.d/dae start
-        echo "${GREEN}Started dae${RESET}"
+        if ! (/etc/init.d/dae start);then
+            echo "${RED}Failed to start dae!${RESET}"
+            echo "${RED}You should check your configuration file and try again.${RESET}"
+        else
+            echo "${GREEN}Started dae${RESET}"
+        fi
     fi
 }
 
@@ -374,15 +381,26 @@ install_dae() {
 }
 
 download_example_config() {
+    example_url="https://github.com/daeuniverse/dae/raw/$latest_version/example.dae"
+    echo "${GREEN}Downloading dae's template configuration file...${RESET}"
+    echo "${GREEN}Downloading from: $example_url${RESET}"
     if [ ! -d /usr/local/etc/dae ]; then
         mkdir -p /usr/local/etc/dae
     fi
-    if ! curl -sL "https://github.com/daeuniverse/dae/raw/$latest_version/example.dae" -o /usr/local/etc/dae/example.dae; then
+    if ! curl -L "$example_url" -o /usr/local/etc/dae/example.dae --progress-bar; then
+        notify_example="yes"
+    fi
+}
+
+notify_configuration() {
+    if [ "$notify_example" == 'yes' ];then
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
         echo "${YELLOW}You can download it from https://github.com/daeuniverse/dae/raw/$latest_version/example.dae${RESET}"
     else
-        echo "${GREEN}Example config file downloaded to /usr/local/etc/dae/example.dae, you can edit it and save it to /usr/local/etc/dae/config.dae${RESET}"
+        echo "${GREEN}Example config file downloaded to /usr/local/etc/dae/example.dae${RESET}"
     fi
+    echo "${YELLOW}It is recommended to compare the differences between your configuration file and the template file, and to refer to the latest Release Note to ensure that your configuration will work with the new version of dae."
+
 }
 
 installation() {
@@ -403,10 +421,10 @@ installation() {
         echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
         echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
-    start_dae
     echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
     notice_installled_tool
+    notify_configuration
 }
 
 should_we_install_dae() {
@@ -428,9 +446,6 @@ should_we_install_dae() {
         echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
         installation
     fi
-#     if [ "$we_should_exit" == "1" ]; then
-#         exit 1
-#     fi
 }
 
 show_helps() {
