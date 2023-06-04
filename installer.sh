@@ -421,6 +421,7 @@ installation() {
         echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
         echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
+    start_dae
     echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
     notice_installled_tool
