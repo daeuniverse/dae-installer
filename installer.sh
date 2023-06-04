@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# set -x
+set -e
 
 ## Color
 if command -v tput > /dev/null 2>&1; then
@@ -399,7 +399,7 @@ notify_configuration() {
     else
         echo "${GREEN}Example config file downloaded to /usr/local/etc/dae/example.dae${RESET}"
     fi
-    echo "${YELLOW}It is recommended to compare the differences between your configuration file and the template file, and to refer to the latest Release Note to ensure that your configuration will work with the new version of dae."
+    echo "${YELLOW}It is recommended to compare the differences between your configuration file and the template file, and to refer to the latest Release Note to ensure that your configuration will work with the new version of dae.""${RESET}"
 
 }
 
