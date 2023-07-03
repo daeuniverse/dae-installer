@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -11,13 +11,14 @@ if command -v tput > /dev/null 2>&1; then
 fi
 
 ## Check root
-if [[ $EUID -ne 0 ]]; then
+user_id="$(id -u "$(whoami)")"
+if [ "$user_id" -ne 0 ]; then
     echo "${RED}error: This script must be run as root!${RESET}"
     exit 1
 fi
 
 stop_dae(){
-    if [ "$(systemctl is-active dae)" == "active" ]; then
+    if [ "$(systemctl is-active dae)" = "active" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         systemctl stop dae
         echo "${GREEN}Stopped dae${RESET}"
