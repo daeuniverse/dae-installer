@@ -18,7 +18,7 @@ sudo sh -c "$(curl -sL https://github.com/daeuniverse/dae-installer/raw/main/ins
 Install with wget:
 
 ```sh
-sudo sh -c "$(wget -O- https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
+sudo sh -c "$(wget -qO- https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
 ```
 
 ### Uninstall dae
@@ -27,7 +27,7 @@ sudo sh -c "$(wget -O- https://github.com/daeuniverse/dae-installer/raw/main/ins
 sudo sh -c "$(curl -sL https://raw.githubusercontent.com/daeuniverse/dae-installer/main/uninstaller.sh)"
 ```
 
-Use `wget -O-` instead of `curl -sL` if you want to use `wget` rather than `curl`.
+Use `wget -qO-` instead of `curl -sL` if you want to use `wget` rather than `curl`.
 
 ## Commands
 
