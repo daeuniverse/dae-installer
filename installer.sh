@@ -375,7 +375,7 @@ download_dae() {
 }
 
 install_dae() {
-    temp_dir="mktemp -d /tmp/dae.XXXXXX"
+    temp_dir="$(mktemp -d /tmp/dae.XXXXXX)"
     echo "${GREEN}unzipping dae's zip file...${RESET}"
     unzip dae-linux-"$MACHINE".zip -d "$temp_dir" >> /dev/null
     cp "$temp_dir""/dae-linux-""$MACHINE" /usr/local/bin/dae
