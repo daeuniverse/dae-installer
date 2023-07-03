@@ -371,17 +371,18 @@ download_dae() {
         rm -f dae-linux-"$MACHINE".zip
         exit 1
     fi
+    rm -f dae-linux-"$MACHINE".zip.dgst
 }
 
 install_dae() {
     temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
-    trap 'rm -fr "$temp_dir"' 0 1 2 3
     echo "${GREEN}unzipping dae's zip file...${RESET}"
     unzip dae-linux-"$MACHINE".zip -d "$temp_dir" >> /dev/null
     cp "$temp_dir""/dae-linux-""$MACHINE" /usr/local/bin/dae
     chmod +x /usr/local/bin/dae
     rm -f dae-linux-"$MACHINE".zip
     echo "${GREEN}dae have been installed/updated.${RESET}"
+    rm -rf "$temp_dir"
 }
 
 download_example_config() {
