@@ -12,6 +12,12 @@ if command -v tput > /dev/null 2>&1; then
     RESET=$(tput sgr0)
 fi
 
+## Check System
+if [ "$(uname)" != 'Linux' ]; then
+    echo "${RED}error: This script only support Linux!${RESET}"
+    exit 1
+fi
+
 ## Check root
 user_id="$(id -u "$(whoami)")"
 if [ "$user_id" -ne 0 ]; then
@@ -39,7 +45,7 @@ if [ -n "$tool_need" ]; then
     elif command -v apk > /dev/null 2>&1; then
         command_install_tool="apk add $tool_need"
     else
-        echo "$RED""You should install $tool_need then try again.""$RESET"
+        echo "$RED""You should install ""$tool_need""then try again.""$RESET"
         exit 1
     fi
     if ! /bin/sh -c "$command_install_tool";then
