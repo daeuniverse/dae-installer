@@ -305,7 +305,7 @@ update_geosite() {
 }
 
 stop_dae(){
-    if [ command -v systemctl > /dev/null 2>&1 ] && [ "$(systemctl is-active dae)" = "active" ]; then
+    if command -v systemctl > /dev/null 2>&1 && [ "$(systemctl is-active dae)" = "active" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         systemctl stop dae
         dae_stopped='1'
