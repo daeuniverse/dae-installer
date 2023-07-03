@@ -3,7 +3,7 @@ dae's install script, you can use it to eat dae! 😊
 
 ## Usage
 
-This script runs in `bash` and require `curl`, `unzip` and `virt-what` to work, these tools can be installed automaticly during installation in most Linux systems.
+This script requires `curl`, `unzip` and `virt-what` to work, these tools can be installed automaticly during installation in most Linux systems.
 
 ### Install dae
 

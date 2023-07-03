@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
+
+# shellcheck disable=SC3000-SC4000
 
 set -e
 
@@ -11,7 +13,8 @@ if command -v tput > /dev/null 2>&1; then
 fi
 
 ## Check root
-if [[ $EUID -ne 0 ]]; then
+user_id="$(id -u "$(whoami)")"
+if [ "$user_id" -ne 0 ]; then
     echo "${RED}error: This script must be run as root!${RESET}"
     exit 1
 fi
@@ -59,11 +62,11 @@ check_virtualization() {
         echo "${RED}error: WSL is not supported!${RESET}"
         exit 1
     fi
-    if [[ $(virt-what) == 'openvz' ]]; then
+    if [ "$(virt-what)" = 'openvz' ]; then
         echo "${RED}error: OpenVZ is not supported!${RESET}"
         exit 1
     fi
-    if [[ "$(virt-what)" == '' ]]; then
+    if [ "$(virt-what)" = '' ]; then
         is_virt=no
     else
         is_virt=yes
@@ -155,20 +158,21 @@ check_local_version(){
 
 check_online_version(){
     temp_file=$(mktemp /tmp/dae_version.XXXXX)
-    trap 'rm -f "$temp_file"' 0 1 2 3
+    # trap 'rm -f "$temp_file"' 0 1 2 3
     if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     else
-    	# cat $temp_file
+        # latest_url=$(curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' | grep -E "^location" | awk '{print $2}' | tr -d '\r')
         latest_version=$(grep -i ^location: "$temp_file"|rev|cut -d/ -f1|rev)
-	    latest_version=${latest_version%$'\r'} # Trim suffix \r
+	    latest_version=$(echo "$latest_version" | tr -d '\r')
     fi
+    rm "$temp_file"
 }
 
 check_arch() {
-if [[ $(uname) == 'Linux' ]]; then
+if [ "$(uname)" = 'Linux' ]; then
 case "$(uname -m)" in
       'i386' | 'i686')
         MACHINE='x86_32'
@@ -210,9 +214,9 @@ case "$(uname -m)" in
         exit 1
         ;;
     esac
-    if [[ "$AMD64" == 'yes' ]] && [[ "$is_virt" == 'yes' ]]; then
+    if [ "$AMD64" = 'yes' ] && [ "$is_virt" = 'yes' ]; then
         MACHINE='x86_64'
-    elif [[ "$AMD64" == 'yes' ]]; then
+    elif [ "$AMD64" = 'yes' ]; then
         if [ -n "$(cat /proc/cpuinfo | grep avx2)" ]; then
             MACHINE='x86_64_v3_avx2'
         elif [ -n "$(cat /proc/cpuinfo | grep sse)" ]; then
@@ -301,7 +305,7 @@ update_geosite() {
 }
 
 stop_dae(){
-    if [ "$(systemctl is-active dae)" == "active" ]; then
+    if [ "$(systemctl is-active dae)" = "active" ]; then
         echo "${GREEN}Stopping dae...${RESET}"
         systemctl stop dae
         dae_stopped='1'
@@ -316,7 +320,7 @@ stop_dae(){
 }
 
 start_dae(){
-    if [ -f /etc/systemd/system/dae.service ] && [ "$dae_stopped" == "1" ]; then
+    if [ -f /etc/systemd/system/dae.service ] && [ "$dae_stopped" = "1" ]; then
         echo "${GREEN}Starting dae...${RESET}"
         if ! systemctl start dae;then
             echo "${RED}Failed to start dae!${RESET}"
@@ -325,7 +329,7 @@ start_dae(){
             echo "${GREEN}Started dae${RESET}"
         fi
     fi
-    if [ -f /etc/init.d/dae ] && [ "$dae_stopped" == "1" ]; then
+    if [ -f /etc/init.d/dae ] && [ "$dae_stopped" = "1" ]; then
         echo "${GREEN}Starting dae...${RESET}"
         if ! (/etc/init.d/dae start);then
             echo "${RED}Failed to start dae!${RESET}"
@@ -393,7 +397,7 @@ download_example_config() {
 }
 
 notify_configuration() {
-    if [ "$notify_example" == 'yes' ];then
+    if [ "$notify_example" = 'yes' ];then
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
         echo "${YELLOW}You can download it from https://github.com/daeuniverse/dae/raw/$latest_version/example.dae${RESET}"
     else
@@ -430,17 +434,17 @@ installation() {
 
 should_we_install_dae() {
     check_virtualization
-    if [ "$force_install" == 'yes' ]; then
+    if [ "$force_install" = 'yes' ]; then
         check_online_version
         current_version='0'
     else
         check_local_version
         check_online_version
     fi
-    if [ "$current_version" == "$latest_version" ]; then
+    if [ "$current_version" = "$latest_version" ]; then
         echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
         notice_installled_tool
-    elif [ "$current_version" == '0' ]; then
+    elif [ "$current_version" = '0' ]; then
         echo "${GREEN}Installing dae version $latest_version... ${RESET}"
         installation
     else
@@ -464,7 +468,7 @@ show_helps() {
 # Main
 current_dir=$(pwd)
 cd /tmp/ || (echo "${YELLOW}Failed to cd /tmp/${RESET}";exit 1)
-if [ "$1" == "" ]; then
+if [ "$1" = "" ]; then
     should_we_install_dae
 fi
 while [ $# != 0 ] ; do
@@ -472,36 +476,36 @@ while [ $# != 0 ] ; do
         echo "${RED}Invalid argument: ${RESET}""$1"
         error_help="yes"
     fi
-    if [ "$1" == "force-install" ]; then
+    if [ "$1" = "force-install" ]; then
         force_install="yes"
     fi
-    if [ "$1" == "update-geoip" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
+    if [ "$1" = "update-geoip" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
         geoip_should_update="yes"
-    elif [ "$1" == "update-geosite" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
+    elif [ "$1" = "update-geosite" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
         geosite_should_update="yes"
-    elif [ "$1" == "install" ] && [ "$force_install" != "yes" ]; then
+    elif [ "$1" = "install" ] && [ "$force_install" != "yes" ]; then
         normal_install="yes"
-    elif [ "$1" == 'help' ]; then
+    elif [ "$1" = 'help' ]; then
         show_help="yes"
     fi
     shift
 done
-if [ "$show_help" == 'yes' ];then
+if [ "$show_help" = 'yes' ];then
     show_helps
     exit 0
 fi
-if [ "$error_help" == 'yes' ];then
+if [ "$error_help" = 'yes' ];then
     show_helps
     exit 1
 fi
-if [ "$force_install" == 'yes' ] || [ "$normal_install" == 'yes' ];then
+if [ "$force_install" = 'yes' ] || [ "$normal_install" = 'yes' ];then
     should_we_install_dae
 fi
-if [ "$geoip_should_update" == 'yes' ];then
+if [ "$geoip_should_update" = 'yes' ];then
     download_geoip
     update_geoip    
 fi
-if [ "$geosite_should_update" == 'yes' ];then
+if [ "$geosite_should_update" = 'yes' ];then
     download_geosite
     update_geosite
 fi
