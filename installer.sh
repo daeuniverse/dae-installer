@@ -157,7 +157,7 @@ check_local_version(){
 }
 
 check_online_version(){
-    temp_file="dae-version-""$(mktemp)"
+    temp_file="$(mktemp /tmp/dae.XXXXXX)"
     # trap 'rm -f "$temp_file"' 0 1 2 3
     if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
@@ -375,7 +375,7 @@ download_dae() {
 }
 
 install_dae() {
-    temp_dir="dae-zip-""$(mktemp)"
+    temp_dir="mktemp -d /tmp/dae.XXXXXX"
     echo "${GREEN}unzipping dae's zip file...${RESET}"
     unzip dae-linux-"$MACHINE".zip -d "$temp_dir" >> /dev/null
     cp "$temp_dir""/dae-linux-""$MACHINE" /usr/local/bin/dae
