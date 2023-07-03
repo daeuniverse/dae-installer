@@ -42,7 +42,7 @@ if [ -n "$tool_need" ]; then
         echo "$RED""You should install $tool_need then try again.""$RESET"
         exit 1
     fi
-    if ! /bin/bash -c "$command_install_tool";then
+    if ! /bin/sh -c "$command_install_tool";then
         echo "$RED""Use system package manager to install $tool_need failed,""$RESET"
         echo "$RED""You should install $tool_need then try again.""$RESET"
         exit 1
