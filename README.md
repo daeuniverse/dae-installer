@@ -7,7 +7,7 @@ This script requires `curl`, `unzip` and `virt-what` to work, these tools can be
 
 ### Install dae
 
-NOTICE: If you are using Alpine Linux, `doas` might be the replacement of `sudo`.
+NOTICE: If you are using Alpine Linux, `doas` might be the replacement of `sudo`; if you are root, then you don't need to use `sudo` or `doas`.
 
 Install with curl:
 
@@ -80,16 +80,24 @@ depend() {
 }
 
 start_pre() {
-   if [ ! -d "/tmp/dae/" ]; then 
-     mkdir "/tmp/dae" 
-   fi
-   if [ ! -d "/var/log/dae/" ]; then
-   ln -s "/tmp/dae/" "/var/log/"
-   fi
-   if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
-      eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
-      return 1
-   fi
+    if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
+        error "bpf filesystem not mounted, exiting..."
+        return 1
+    fi
+    if [ -d /sys/fs/cgroup ] && ! mountinfo -q /sys/fs/cgroup/; then
+        error "cgroup filesystem not mounted, exiting..."
+        return 1
+    fi
+    if [ ! -d "/tmp/dae/" ]; then 
+        mkdir "/tmp/dae" 
+    fi
+    if [ ! -L "/var/log/dae" ]; then
+        ln -s "/tmp/dae/" "/var/log/"
+    fi
+    if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
+        eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
+        return 1
+    fi
 }
 
 reload() {
@@ -98,7 +106,7 @@ reload() {
         ebegin "Reloading $RC_SVCNAME"
         /usr/local/bin/dae reload $pid_dae
         eend $?
-    fi
+	fi
 }
 ```
 

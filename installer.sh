@@ -137,7 +137,7 @@ start_pre() {
     if [ ! -d "/tmp/dae/" ]; then 
         mkdir "/tmp/dae" 
     fi
-    if [ ! -d "/var/log/dae/" ]; then
+    if [ ! -L "/var/log/dae" ]; then
         ln -s "/tmp/dae/" "/var/log/"
     fi
     if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
@@ -178,9 +178,10 @@ check_online_version(){
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     else
-        # latest_url=$(curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' | grep -E "^location" | awk '{print $2}' | tr -d '\r')
-        latest_version=$(grep -i ^location: "$temp_file"|rev|cut -d/ -f1|rev)
-	    latest_version=$(echo "$latest_version" | tr -d '\r')
+        # latest_url="$(curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' | grep -E "^location" | awk '{print $2}' | tr -d '\r')"
+        # latest_version=$(grep -i ^location: "$temp_file"|rev|cut -d/ -f1|rev)
+	    # latest_version=$(echo "$latest_version" | tr -d '\r')
+        latest_version=$(grep -i ^location: "$temp_file" | grep -E "^location" | awk '{print $2}' | tr -d '\r' | awk -F 'tag/' '{print $2}')
     fi
     rm "$temp_file"
 }
