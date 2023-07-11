@@ -106,7 +106,7 @@ reload() {
         ebegin "Reloading $RC_SVCNAME"
         /usr/local/bin/dae reload $pid_dae
         eend $?
-	fi
+    fi
 }
 ```
 
