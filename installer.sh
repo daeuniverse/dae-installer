@@ -129,7 +129,11 @@ start_pre() {
     if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
         error "bpf filesystem not mounted, exiting..."
         return 1
-    fi 
+    fi
+    if [ -d /sys/fs/cgroup ] && ! mountinfo -q /sys/fs/cgroup/; then
+        error "cgroup filesystem not mounted, exiting..."
+        return 1
+    fi
     if [ ! -d "/tmp/dae/" ]; then 
         mkdir "/tmp/dae" 
     fi
