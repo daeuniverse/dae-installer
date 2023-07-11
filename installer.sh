@@ -126,19 +126,20 @@ depend() {
 }
 
 start_pre() {
-   if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
-     error "bpf filesystem not mounted, exiting..."
-   fi 
-   if [ ! -d "/tmp/dae/" ]; then 
-     mkdir "/tmp/dae" 
-   fi
-   if [ ! -d "/var/log/dae/" ]; then
-   ln -s "/tmp/dae/" "/var/log/"
-   fi
-   if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
-      eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
-      return 1
-   fi
+    if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
+        error "bpf filesystem not mounted, exiting..."
+        return 1
+    fi 
+    if [ ! -d "/tmp/dae/" ]; then 
+        mkdir "/tmp/dae" 
+    fi
+    if [ ! -d "/var/log/dae/" ]; then
+        ln -s "/tmp/dae/" "/var/log/"
+    fi
+    if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
+        eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
+        return 1
+    fi
 }
 
 reload() {
