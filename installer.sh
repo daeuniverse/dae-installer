@@ -126,6 +126,9 @@ depend() {
 }
 
 start_pre() {
+   if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
+     error "bpf filesystem not mounted, exiting..."
+   fi 
    if [ ! -d "/tmp/dae/" ]; then 
      mkdir "/tmp/dae" 
    fi
