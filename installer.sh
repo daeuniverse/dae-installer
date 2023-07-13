@@ -163,16 +163,12 @@ check_local_version(){
 
 check_online_version(){
     temp_file="$(mktemp /tmp/dae.XXXXXX)"
-    # trap 'rm -f "$temp_file"' 0 1 2 3
     if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     else
-        # latest_url="$(curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' | grep -E "^location" | awk '{print $2}' | tr -d '\r')"
-        # latest_version=$(grep -i ^location: "$temp_file"|rev|cut -d/ -f1|rev)
-	    # latest_version=$(echo "$latest_version" | tr -d '\r')
-        latest_version=$(grep -i ^location: "$temp_file" | grep -E "^location" | awk '{print $2}' | tr -d '\r' | awk -F 'tag/' '{print $2}')
+        latest_version=$(grep -i ^location: "$temp_file" | awk '{print $2}' | tr -d '\r' | awk -F 'tag/' '{print $2}')
     fi
     rm "$temp_file"
 }
@@ -465,7 +461,7 @@ show_helps() {
     echo "  installer.sh [command]"
     echo ' '
     echo -e "${GREEN}""\033[1;4mAvailable commands:\033[0m""${RESET}"
-    echo "  install             install/update dae if there is no dae or dae version is not same as GitHub latest release"
+    echo "  install             install/update dae if no dae or dae version isn't as same as GitHub latest release"
     echo "  force-install       install/update latest version of dae without checking local dae version"
     echo "  update-geoip        update GeoIP database"
     echo "  update-geosite      update GeoSite database"
@@ -474,28 +470,38 @@ show_helps() {
 
 # Main
 current_dir=$(pwd)
-cd /tmp/ || (echo "${YELLOW}Failed to cd /tmp/${RESET}";exit 1)
+cd /tmp/ || (echo "${YELLOW}Failed to cd /tmp/${RESET}"; exit 1)
 if [ "$1" = "" ]; then
     should_we_install_dae
 fi
 while [ $# != 0 ] ; do
-    if [ "$1" != "update-geoip" ] && [ "$1" != "update-geosite" ] && [ "$1" != "install" ] && [ "$1" != "force-install" ] && [ "$1" != "help" ] && [ "$1" != "" ]; then
-        echo "${RED}Invalid argument: ${RESET}""$1"
-        error_help="yes"
-    fi
-    if [ "$1" = "force-install" ]; then
-        force_install="yes"
-    fi
-    if [ "$1" = "update-geoip" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
-        geoip_should_update="yes"
-    elif [ "$1" = "update-geosite" ] && [ "$force_install" != "yes" ] && [ "$1" != "install" ]; then
-        geosite_should_update="yes"
-    elif [ "$1" = "install" ] && [ "$force_install" != "yes" ]; then
-        normal_install="yes"
-    elif [ "$1" = 'help' ]; then
-        show_help="yes"
-    fi
-    shift
+    case "$1" in
+        install)
+            normal_install='yes'
+            shift
+            ;;
+        force-install)
+            force_install='yes'
+            shift
+            ;;
+        update-geoip)
+            geoip_should_update='yes'
+            shift
+            ;;
+        update-geosite)
+            geosite_should_update='yes'
+            shift
+            ;;
+        help)
+            show_help='yes'
+            shift
+            ;;
+        *)
+            error_help='yes'
+            echo "${RED}error: Unknown command: $1${RESET}"
+            shift
+            ;;
+    esac
 done
 if [ "$show_help" = 'yes' ];then
     show_helps
