@@ -143,14 +143,14 @@ check_status() {
 start() {
     check_config
     echo "Starting dae service..."
-    start-stop-daemon --start --background --pidfile $PIDFILE --make-pidfile --exec $DAEMON -- $PARAMS
+    start-stop-daemon -S -b -p $PIDFILE -m -x $DAEMON -- $PARAMS
     echo "dae service started."
 }
 
 stop() {
     echo "Stopping dae service..."
     if [ -f $PIDFILE ]; then
-        start-stop-daemon --stop --pidfile $PIDFILE
+        start-stop-daemon -K -p $PIDFILE
         rm -f $PIDFILE
     fi
     echo "dae service stopped."
