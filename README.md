@@ -101,7 +101,9 @@ start_pre() {
 }
 ```
 
-## Classic Sysvinit
+### Classic SysVinit script
+
+A SysVinit service can work with SysVinit, OpenRC, OpenWrt's Procd and Systemd (with `systemd-sysvcompat` installed), `start-stop-daemon` should be installed to run this script.
 
 ```sh
 #!/bin/sh
