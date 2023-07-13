@@ -101,6 +101,94 @@ start_pre() {
 }
 ```
 
+## Classic Sysvinit
+
+```sh
+#!/bin/sh
+#
+# dae service
+#
+# chkconfig: 345 99 01
+# description: Dae Daemon
+#
+
+DAEMON=/usr/local/bin/dae
+PIDFILE=/var/run/dae-daemon.pid
+CONFIG="/usr/local/etc/dae/config.dae"
+PARAMS="run -c $CONFIG"
+
+check_config() {
+    if ! $DAEMON validate -c $CONFIG; then
+        echo "checking config file $CONFIG failed, exiting..."
+        exit 1
+    fi
+}
+
+check_status() {
+    if [ -f "$PIDFILE" ];then
+        if [ "$(pidof "$DAEMON")" = "$(cat "$PIDFILE")" ];then
+            echo "dae service is running."
+        fi
+    elif [ ! -f "$PIDFILE" ] || [ -z "$(cat "$PIDFILE")" ];then
+        if [ -z "$(pidof $DAEMON)" ]; then
+            echo "dae service is not running".
+        else
+            echo "A dae progress is running, but dae service is not running."
+        fi
+    fi
+}
+
+start() {
+    check_config
+    echo "Starting dae service..."
+    start-stop-daemon --start --background --pidfile $PIDFILE --make-pidfile --exec $DAEMON -- $PARAMS
+    echo "dae service started."
+}
+
+stop() {
+    echo "Stopping dae service..."
+    if [ -f $PIDFILE ]; then
+        start-stop-daemon --stop --pidfile $PIDFILE
+        rm -f $PIDFILE
+    fi
+    echo "dae service stopped."
+}
+
+reload() {
+    echo "Reloading dae service..."
+    if [ -f $PIDFILE ]; then
+        $DAEMON reload $(cat $PIDFILE)
+        echo "dae service reloaded."
+    else
+        echo "dae service is not running."
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    reload)
+        reload
+        ;;
+    status)
+        check_status
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+esac
+
+exit 0
+```
+
 ## Thanks to
 
 1. Project V's script: https://github.com/v2fly/fhs-install-v2ray
