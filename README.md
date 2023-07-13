@@ -99,15 +99,6 @@ start_pre() {
         return 1
     fi
 }
-
-reload() {
-    pid_dae="$(cat /run/${RC_SVCNAME}.pid)"
-    if [ -n "$pid_dae" ];then
-        ebegin "Reloading $RC_SVCNAME"
-        /usr/local/bin/dae reload $pid_dae
-        eend $?
-    fi
-}
 ```
 
 ## Thanks to

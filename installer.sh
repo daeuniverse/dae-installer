@@ -144,15 +144,6 @@ start_pre() {
         eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
         return 1
     fi
-}
-
-reload() {
-    pid_dae="$(cat /run/${RC_SVCNAME}.pid)"
-    if [ -n "$pid_dae" ];then
-        ebegin "Reloading $RC_SVCNAME"
-        /usr/local/bin/dae reload $pid_dae
-        eend $?
-	fi
 }' > /etc/init.d/dae
     chmod +x /etc/init.d/dae
     echo "${GREEN}OpenRC service installed/updated,${RESET}"
