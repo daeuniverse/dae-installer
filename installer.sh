@@ -50,7 +50,7 @@ if [ -n "$tool_need" ]; then
     fi
     if ! /bin/sh -c "$command_install_tool";then
         echo "$RED""Use system package manager to install $tool_need failed,""$RESET"
-        echo "$RED""You should install $tool_need then try again.""$RESET"
+        echo "$RED""You should install ""$tool_need""then try again.""$RESET"
         exit 1
     fi
 fi
@@ -458,7 +458,7 @@ should_we_install_dae() {
 
 show_helps() {
     echo -e "${GREEN}""\033[1;4mUsage:\033[0m""${RESET}"
-    echo "  installer.sh [command]"
+    echo "  installer [command]"
     echo ' '
     echo -e "${GREEN}""\033[1;4mAvailable commands:\033[0m""${RESET}"
     echo "  install             install/update dae if no dae or dae version isn't as same as GitHub latest release"
@@ -516,7 +516,7 @@ if [ "$force_install" = 'yes' ] || [ "$normal_install" = 'yes' ];then
 fi
 if [ "$geoip_should_update" = 'yes' ];then
     download_geoip
-    update_geoip    
+    update_geoip
 fi
 if [ "$geosite_should_update" = 'yes' ];then
     download_geosite
