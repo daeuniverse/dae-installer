@@ -85,6 +85,7 @@ install_systemd_service() {
 Description=dae Service
 Documentation=https://github.com/daeuniverse/dae
 After=network-online.target docker.service systemd-sysctl.service
+Wants=network-online.target
 
 [Service]
 Type=notify
