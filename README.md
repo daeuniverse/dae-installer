@@ -42,6 +42,7 @@ Use `update-geoip` to update geoip without updating dae, use `update-geosite` to
 Description=dae Service
 Documentation=https://github.com/daeuniverse/dae
 After=network-online.target docker.service systemd-sysctl.service
+Wants=network-online.target
 
 [Service]
 Type=notify
