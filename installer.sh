@@ -79,85 +79,64 @@ check_virtualization() {
     fi
 }
 
+download_systemd_service(){
+    echo "${GREEN}Download systemd service...${RESET}"
+    if ! curl -LO -# https://github.com/daeuniverse/dae/raw/$latest_version/install/dae.service; then
+        echo "${RED}error: Failed to download Systemd Service!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        exit 1
+    fi
+}
+
 install_systemd_service() {
     echo "${GREEN}Installing/updating systemd service...${RESET}"
-    echo '[Unit]
-Description=dae Service
-Documentation=https://github.com/daeuniverse/dae
-After=network-online.target docker.service systemd-sysctl.service
-
-[Service]
-Type=notify
-User=root
-LimitNPROC=512
-LimitNOFILE=1048576
-ExecStartPre=/usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae
-ExecStart=/usr/local/bin/dae run --disable-timestamp -c /usr/local/etc/dae/config.dae
-ExecReload=/usr/local/bin/dae reload $MAINPID
-Restart=on-abnormal
-
-[Install]
-WantedBy=multi-user.target' > /etc/systemd/system/dae.service
+    cat dae.service | sed 's|usr/bin|usr/local/bin|g' | sed 's|etc|usr/local/etc|g' | tee /etc/systemd/system/dae.service
     systemctl daemon-reload
-    echo "${GREEN}Systemd service installed/updated,${RESET}"
-    echo "${GREEN}you can start dae by running:${RESET}"
-    echo "systemctl start dae"
-    echo "${GREEN}if you want to start dae at system boot:${RESET}"
-    echo "systemctl enable dae"
+    echo "${GREEN}Systemd service installed/updated.${RESET}"
+    rm dae.service
+}
+
+download_openrc_service(){
+    echo "${GREEN}Download OpenRC service...${RESET}"
+    if ! curl -L -# https://github.com/daeuniverse/dae-installer/raw/main/OpenRC/dae -o dae-openrc.sh; then
+        echo "${RED}error: Failed to download OpenRC Service!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        exit 1
+    fi
 }
 
 install_openrc_service(){
     echo "${GREEN}Installing/updating OpenRC service...${RESET}"
-    echo '#!/sbin/openrc-run
-description="dae Service"
-command="/usr/local/bin/dae"
-command_args="run -c /usr/local/etc/dae/config.dae"
-pidfile="/run/${RC_SVCNAME}.pid"
-command_background="yes"
-output_log="/var/log/dae/access.log"
-error_log="/var/log/dae/error.log"
-supervisor="supervise-daemon"
-rc_ulimit="-n 30000"
-rc_cgroup_cleanup="yes"
-
-depend() {
-    after docker net net-online sysctl
-    use net
+    cat dae-openrc.sh | tee /etc/init.d/dae
+    chmod +x /etc/init.d/dae
+    echo "${GREEN}OpenRC service installed/updated${RESET}"
+    rm dae-openrc.sh
 }
 
-start_pre() {
-    if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
-        error "bpf filesystem not mounted, exiting..."
-        return 1
+download_service(){
+    if [ -f /usr/lib/systemd/systemd ]; then
+        download_systemd_service
+    elif [ -f /sbin/openrc-run ]; then
+        download_openrc_service
     fi
-    if [ -d /sys/fs/cgroup ] && ! mountinfo -q /sys/fs/cgroup/; then
-        error "cgroup filesystem not mounted, exiting..."
-        return 1
+}
+
+install_service(){
+    if [ -f /usr/lib/systemd/systemd ]; then
+        install_systemd_service
+    elif [ -f /sbin/openrc-run ]; then
+        install_openrc_service
+    else
+        echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
+        echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
-    if [ ! -d "/tmp/dae/" ]; then 
-        mkdir "/tmp/dae" 
-    fi
-    if [ ! -L "/var/log/dae" ]; then
-        ln -s "/tmp/dae/" "/var/log/"
-    fi
-    if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
-        eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
-        return 1
-    fi
-}' > /etc/init.d/dae
-    chmod +x /etc/init.d/dae
-    echo "${GREEN}OpenRC service installed/updated,${RESET}"
-    echo "${GREEN}you can start dae by running:${RESET}"
-    echo "rc-service dae start"
-    echo "${GREEN}if you want to start dae at system boot:${RESET}"
-    echo "rc-update add dae default"
 }
 
 check_local_version(){
     if ! command -v /usr/local/bin/dae > /dev/null 2>&1; then
         current_version=0
     else
-        current_version=$(/usr/local/bin/dae --version | awk '{print $3}')
+        current_version=$(/usr/local/bin/dae --version | awk 'NR==1' | awk '{print $3}')
     fi
 }
 
@@ -171,6 +150,18 @@ check_online_version(){
         latest_version=$(grep -i ^location: "$temp_file" | awk '{print $2}' | tr -d '\r' | awk -F 'tag/' '{print $2}')
     fi
     rm "$temp_file"
+}
+
+compare_version(){
+    if [[ $latest_version = "$current_version" ]]; then
+        # Don't need update
+        compare_status=0
+    elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -V | head -n1)" = "$current_version" ]]; then
+        # Update to latest version
+        compare_status=1
+    else
+        compare_status=2
+    fi
 }
 
 check_arch() {
@@ -403,11 +394,7 @@ notify_configuration() {
     if [ "$notify_example" = 'yes' ];then
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
         echo "${YELLOW}You can download it from https://github.com/daeuniverse/dae/raw/$latest_version/example.dae${RESET}"
-    else
-        echo "${GREEN}Example config file downloaded to /usr/local/etc/dae/example.dae${RESET}"
     fi
-    echo "${YELLOW}It is recommended to compare the differences between your configuration file and the template file, and to refer to the latest Release Note to ensure that your configuration will work with the new version of dae.""${RESET}"
-
 }
 
 installation() {
@@ -416,18 +403,12 @@ installation() {
     download_geoip
     download_geosite
     download_example_config
+    download_service
     stop_dae
     install_dae
     update_geoip
     update_geosite
-    if [ -f /usr/lib/systemd/systemd ]; then
-        install_systemd_service
-    elif [ -f /sbin/openrc-run ]; then
-        install_openrc_service
-    else
-        echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
-        echo "${YELLOW}You should write service file/script by yourself.${RESET}"
-    fi
+    install_service
     start_dae
     echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
@@ -444,12 +425,17 @@ should_we_install_dae() {
         check_local_version
         check_online_version
     fi
-    if [ "$current_version" = "$latest_version" ]; then
+    compare_version
+    if [ "$compare_status" = '0' ]; then
         echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
         notice_installled_tool
     elif [ "$current_version" = '0' ]; then
         echo "${GREEN}Installing dae version $latest_version... ${RESET}"
         installation
+    elif [ "$compare_status" = '2' ]; then
+        echo "${YELLOW}Local version $current_version is greater than remote version $latest_version ${RESET}"
+        echo "${GREEN}If you still want to install, use force-install arg anyway.${RESET}"
+        exit 0
     else
         echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
         installation
@@ -458,11 +444,11 @@ should_we_install_dae() {
 
 show_helps() {
     echo -e "${GREEN}""\033[1;4mUsage:\033[0m""${RESET}"
-    echo "  installer [command]"
+    echo "  $0 [command]"
     echo ' '
     echo -e "${GREEN}""\033[1;4mAvailable commands:\033[0m""${RESET}"
-    echo "  install             install/update dae if no dae or dae version isn't as same as GitHub latest release"
-    echo "  force-install       install/update latest version of dae without checking local dae version"
+    echo "  install             install/update dae, default behavior"
+    echo "  force-install       install/update latest version of dae without checking local version"
     echo "  update-geoip        update GeoIP database"
     echo "  update-geosite      update GeoSite database"
     echo "  help                show this help message"
