@@ -37,69 +37,11 @@ Use `update-geoip` to update geoip without updating dae, use `update-geosite` to
 
 ### Systemd
 
-```ini
-[Unit]
-Description=dae Service
-Documentation=https://github.com/daeuniverse/dae
-After=network-online.target docker.service systemd-sysctl.service
-
-[Service]
-Type=notify
-User=root
-LimitNPROC=512
-LimitNOFILE=1048576
-ExecStartPre=/usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae
-ExecStart=/usr/local/bin/dae run --disable-timestamp -c /usr/local/etc/dae/config.dae
-ExecReload=/usr/local/bin/dae reload $MAINPID
-Restart=on-abnormal
-
-[Install]
-WantedBy=multi-user.target
-```
+See [Systemd](Systemd)
 
 ### OpenRC
 
-WARNING: Don't use OpenRC service script on OpenWrt, they are NOT same.
-
-```sh
-#!/sbin/openrc-run
-description="dae Service"
-command="/usr/local/bin/dae"
-command_args="run -c /usr/local/etc/dae/config.dae"
-pidfile="/run/${RC_SVCNAME}.pid"
-command_background="yes"
-output_log="/var/log/dae/access.log"
-error_log="/var/log/dae/error.log"
-supervisor="supervise-daemon"
-rc_ulimit="-n 30000"
-rc_cgroup_cleanup="yes"
-
-depend() {
-    after docker net net-online sysctl
-    use net
-}
-
-start_pre() {
-    if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
-        error "bpf filesystem not mounted, exiting..."
-        return 1
-    fi
-    if [ -d /sys/fs/cgroup ] && ! mountinfo -q /sys/fs/cgroup/; then
-        error "cgroup filesystem not mounted, exiting..."
-        return 1
-    fi
-    if [ ! -d "/tmp/dae/" ]; then 
-        mkdir "/tmp/dae" 
-    fi
-    if [ ! -L "/var/log/dae" ]; then
-        ln -s "/tmp/dae/" "/var/log/"
-    fi
-    if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
-        eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
-        return 1
-    fi
-}
-```
+See [OpenRC](OpenRC)
 
 ### Classic SysVinit script
 
