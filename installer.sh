@@ -177,9 +177,10 @@ compare_version(){
         # Don't need update
         compare_status=0
     elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -rV | head -n1)" = "$current_version" ]]; then
-        # Update to latest version
+        # Local version is greater than remote version
         compare_status=1
     else
+        # Local version is older than remote version
         compare_status=2
     fi
 }
@@ -449,7 +450,7 @@ should_we_install_dae() {
     elif [ "$current_version" = '0' ]; then
         echo "${GREEN}Installing dae version $latest_version... ${RESET}"
         installation
-    elif [ "$compare_status" = '2' ]; then
+    elif [ "$compare_status" = '1' ]; then
         echo "${YELLOW}Local version $current_version is greater than remote version $latest_version, ${RESET}"
         echo "${GREEN}If you still want to install, use force-install arg anyway.${RESET}"
         exit 0
