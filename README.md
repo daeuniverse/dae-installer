@@ -9,16 +9,16 @@ This script requires `curl`, `unzip` and `virt-what` to work, these tools can be
 
 NOTICE: If you are using Alpine Linux, `doas` might be the replacement of `sudo`; if you are root, then you don't need to use `sudo` or `doas`.
 
-Install with curl:
+Open a Terminal and type in:
 
 ```sh
-sudo sh -c "$(curl -sL https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
+sudo sh -c "$(wget -qO https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
 ```
 
-Install with wget:
+If you have difficulty accessing GitHub, you can use this command instead: 
 
 ```sh
-sudo sh -c "$(wget -qO- https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
+sudo sh -c "$(wget -qO- https://cdn.jsdelivr.net/gh/daeuniverse/dae-installer/installer.sh)" @ install use-cdn
 ```
 
 ### Uninstall dae
@@ -27,11 +27,19 @@ sudo sh -c "$(wget -qO- https://github.com/daeuniverse/dae-installer/raw/main/in
 sudo sh -c "$(curl -sL https://raw.githubusercontent.com/daeuniverse/dae-installer/main/uninstaller.sh)"
 ```
 
-Use `wget -qO-` instead of `curl -sL` if you want to use `wget` rather than `curl`.
+Use `curl -sL` instead of `wget -qO-` if you want to use `curl` rather than `wget`.
 
 ## Commands
 
-Use `update-geoip` to update geoip without updating dae, use `update-geosite` to update geosite without updating dae, use `install` to install/update dae, and when installing/updating dae, geoip and geosite will also be updated.
+```txt
+Available commands:
+  use-cdn             use Cloudflare Worker and jsDelivr CDN to download files
+  install             install/update dae, default behavior
+  force-install       install/update latest version of dae without checking local version
+  update-geoip        update GeoIP database
+  update-geosite      update GeoSite database
+  help                show this help message
+```
 
 ## System Service
 

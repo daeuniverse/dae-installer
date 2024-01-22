@@ -176,7 +176,7 @@ compare_version(){
     if [[ $latest_version = "$current_version" ]]; then
         # Don't need update
         compare_status=0
-    elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -V | head -n1)" = "$current_version" ]]; then
+    elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -rV | head -n1)" = "$current_version" ]]; then
         # Update to latest version
         compare_status=1
     else
