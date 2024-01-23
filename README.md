@@ -12,7 +12,7 @@ NOTICE: If you are using Alpine Linux, `doas` might be the replacement of `sudo`
 Open a Terminal and type in:
 
 ```sh
-sudo sh -c "$(wget -qO https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
+sudo sh -c "$(wget -qO- https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
 ```
 
 If you have difficulty accessing GitHub, you can use this command instead: 
