@@ -58,7 +58,7 @@ fi
 get_download_urls(){
     if [ "$use_cdn" = 'yes' ]; then
         systemd_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/install/dae.service"
-        openrc_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae-installer/main/OpenRC/dae"
+        openrc_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae-installer/OpenRC/dae"
         dae_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip"
         dae_hash_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst"
         example_config_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/example.dae"
