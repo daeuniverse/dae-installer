@@ -25,6 +25,25 @@ if [ "$user_id" -ne 0 ]; then
     exit 1
 fi
 
+## SHA256SUM
+if command -v sha256sum >/dev/null 2>&1; then
+    SHA256SUM() {
+        sha256sum "$1" | awk -F ' ' '{print$1}'
+    }
+elif command -v shasum >/dev/null 2>&1; then
+    SHA256SUM() {
+        shasum -a 256 "$1" | awk -F ' ' '{print$1}'
+    }
+elif command -v openssl >/dev/null 2>&1; then
+    SHA256SUM() {
+        openssl dgst -sha256 "$1" | awk -F ' ' '{print$2}'
+    }
+elif command -v busybox >/dev/null 2>&1; then
+    SHA256SUM() {
+        busybox sha256sum "$1" | awk -F ' ' '{print$1}'
+    }
+fi
+
 ## Check curl, unzip, virt-what
 for tool in curl unzip virt-what; do
     if ! command -v $tool> /dev/null 2>&1; then
@@ -162,14 +181,18 @@ check_local_version(){
 
 check_online_version(){
     temp_file="$(mktemp /tmp/dae.XXXXXX)"
-    if ! curl -s -I 'https://github.com/daeuniverse/dae/releases/latest' -o "$temp_file"; then
+    if ! curl -s 'https://api.github.com/repos/daeuniverse/dae/releases/latest' -o "$temp_file"; then
         echo "${RED}error: Failed to get the latest version of dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
+    elif ! grep '"tag_name":' "$temp_file" > /dev/null; then
+        echo "${RED}error: The GitHub API did not return valid information, please try again later.${RESET}"
+        rm "$temp_file"
+        exit 1
     else
-        latest_version=$(grep -i ^location: "$temp_file" | awk '{print $2}' | tr -d '\r' | awk -F 'tag/' '{print $2}')
+        latest_version="$(grep '"tag_name":' "$temp_file" | awk -F '"' '{printf $4}')"
+        rm "$temp_file"
     fi
-    rm "$temp_file"
 }
 
 compare_version(){
@@ -199,11 +222,11 @@ case "$(uname -m)" in
         ;;
       'armv6l')
         MACHINE='armv6'
-        grep Features /proc/cpuinfo | grep -qw 'vfp' || MACHINE='arm32-v5'
+        grep Features /proc/cpuinfo | grep -qw 'vfp' || MACHINE='armv5'
         ;;
       'armv7' | 'armv7l')
         MACHINE='armv7'
-        grep Features /proc/cpuinfo | grep -qw 'vfp' || MACHINE='arm32-v5'
+        grep Features /proc/cpuinfo | grep -qw 'vfp' || MACHINE='armv5'
         ;;
       'armv8' | 'aarch64')
         MACHINE='arm64'
@@ -231,9 +254,9 @@ case "$(uname -m)" in
     if [ "$AMD64" = 'yes' ] && [ "$is_virt" = 'yes' ]; then
         MACHINE='x86_64'
     elif [ "$AMD64" = 'yes' ]; then
-        if [ -n "$(cat /proc/cpuinfo | grep avx2)" ]; then
+        if [ -n "$(grep avx2 /proc/cpuinfo)" ]; then
             MACHINE='x86_64_v3_avx2'
-        elif [ -n "$(cat /proc/cpuinfo | grep sse)" ]; then
+        elif [ -n "$(grep sse /proc/cpuinfo)" ]; then
             MACHINE='x86_64_v2_sse'
         else
             MACHINE='x86_64'
@@ -265,8 +288,8 @@ download_geoip() {
         rm -f geoip.dat
         exit 1
     fi
-    geoip_local_sha256=$(sha256sum geoip.dat)
-    geoip_remote_sha256=$(cat geoip.dat.sha256sum)
+    geoip_local_sha256=$(SHA256SUM geoip.dat)
+    geoip_remote_sha256=$(cat geoip.dat.sha256sum | awk -F ' ' '{print $1}')
     if [ "$geoip_local_sha256" != "$geoip_remote_sha256" ]; then
         echo "${RED}error: The checksum of the downloaded GeoIP database does not match!${RESET}"
         echo "${RED}Local SHA256: $geoip_local_sha256${RESET}"
@@ -297,8 +320,8 @@ download_geosite() {
         rm -f geosite.dat
         exit 1
     fi
-    geosite_local_sha256=$(sha256sum geosite.dat)
-    geosite_remote_sha256=$(cat geosite.dat.sha256sum)
+    geosite_local_sha256=$(SHA256SUM geosite.dat)
+    geosite_remote_sha256=$(cat geosite.dat.sha256sum | awk -F ' ' '{print $1}')
     if [ "$geoip_local_sha256" != "$geoip_remote_sha256" ]; then
         echo "${RED}error: The checksum of the downloaded GeoIP database does not match!${RESET}"
         echo "${RED}Local SHA256: $geosite_local_sha256${RESET}"
@@ -360,7 +383,7 @@ download_dae() {
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     fi
-    local_sha256=$(sha256sum dae-linux-"$MACHINE".zip | awk -F ' ' '{print $1}')
+    local_sha256=$(SHA256SUM dae-linux-"$MACHINE".zip | awk -F ' ' '{print $1}')
     if [ -z "$local_sha256" ]; then
         echo "${RED}error: Failed to get the checksum of the downloaded file!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
@@ -408,10 +431,41 @@ download_example_config() {
 }
 
 notify_configuration() {
+    echo '----------------------------------------------------------------------'
     if [ "$notify_example" = 'yes' ];then
+        echo '----------------------------------------------------------------------'
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
-        echo "${YELLOW}You can download it from https://github.com/daeuniverse/dae/raw/$latest_version/example.dae${RESET}"
+        echo "${YELLOW}You can download it from:
+        https://github.com/daeuniverse/dae/raw/$latest_version/example.dae${RESET}"
+        echo '----------------------------------------------------------------------'
     fi
+    echo '----------------------------------------------------------------------'
+    echo "${GREEN}dae have been installed/updated, installed version:${RESET}"
+    echo "$latest_version"
+    if command -v systemctl > /dev/null 2>&1; then
+        echo "${GREEN}You can start dae by running:${RESET}"
+        echo "systemctl start dae.service"
+        echo "${GREEN}You can enable dae service so it can be started at system boot:${RESET}"
+        echo "systemctl enable dae.service"
+    elif command -v openrc-run > /dev/null 2>&1; then
+        echo "${GREEN}You can start dae by running:${RESET}"
+        echo "/etc/init.d/dae start"
+        echo "${GREEN}You can enable dae service so it can be started at system boot:${RESET}"
+        echo "rc-update add dae default"
+    else
+        echo "${YELLOW}No service installed beacuse of missing Systemd/OpenRC,
+        you should write a service script/config for your service
+        manager by yourself.${RESET}"
+    fi
+    echo '----------------------------------------------------------------------'
+    echo '----------------------------------------------------------------------'
+    echo "${GREEN}Your configuration file is:${RESET}"
+    echo "/usr/local/etc/dae/config.dae"
+    echo "${GREEN}And this file should be read by root only, you should${RESET}"
+    echo "${GREEN}change the permission of this file by running:${RESET}"
+    echo "chmod 600 /usr/local/etc/dae/config.dae"
+    echo '----------------------------------------------------------------------'
+    echo '----------------------------------------------------------------------'
 }
 
 installation() {
@@ -426,8 +480,6 @@ installation() {
     update_geosite
     install_service
     start_dae
-    echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
-    echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
     notice_installled_tool
     notify_configuration
 }
