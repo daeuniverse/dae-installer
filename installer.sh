@@ -55,6 +55,26 @@ if [ -n "$tool_need" ]; then
     fi
 fi
 
+get_download_urls(){
+    if [ "$use_cdn" = 'yes' ]; then
+        systemd_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/install/dae.service"
+        openrc_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae-installer/main/OpenRC/dae"
+        dae_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip"
+        dae_hash_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst"
+        example_config_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/example.dae"
+        geoip_url="https://cdn.jsdelivr.net/gh/v2rayA/dist-v2ray-rules-dat/geoip.dat"
+        geosite_url="https://cdn.jsdelivr.net/gh/v2rayA/dist-v2ray-rules-dat/geosite.dat"
+    else
+        systemd_service_url="https://github.com/daeuniverse/dae/raw/$latest_version/install/dae.service"
+        openrc_service_url="https://github.com/daeuniverse/dae-installer/raw/main/OpenRC/dae"
+        dae_url="https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip"
+        dae_hash_url="https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst"
+        example_config_url="https://github.com/daeuniverse/dae/raw/$latest_version/example.dae"
+        geoip_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geoip.dat"
+        geosite_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geosite.dat"
+    fi
+}
+
 notice_installled_tool() {
     if [ -n "$tool_need" ]; then
         echo "${GREEN}You have installed the following tools during installation:${RESET}"
@@ -79,85 +99,64 @@ check_virtualization() {
     fi
 }
 
+download_systemd_service(){
+    echo "${GREEN}Download systemd service...${RESET}"
+    if ! curl -LO -# $systemd_service_url; then
+        echo "${RED}error: Failed to download Systemd Service!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        exit 1
+    fi
+}
+
 install_systemd_service() {
     echo "${GREEN}Installing/updating systemd service...${RESET}"
-    echo '[Unit]
-Description=dae Service
-Documentation=https://github.com/daeuniverse/dae
-After=network-online.target docker.service systemd-sysctl.service
-
-[Service]
-Type=notify
-User=root
-LimitNPROC=512
-LimitNOFILE=1048576
-ExecStartPre=/usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae
-ExecStart=/usr/local/bin/dae run --disable-timestamp -c /usr/local/etc/dae/config.dae
-ExecReload=/usr/local/bin/dae reload $MAINPID
-Restart=on-abnormal
-
-[Install]
-WantedBy=multi-user.target' > /etc/systemd/system/dae.service
+    cat dae.service | sed 's|usr/bin|usr/local/bin|g' | sed 's|etc|usr/local/etc|g' | tee /etc/systemd/system/dae.service
     systemctl daemon-reload
-    echo "${GREEN}Systemd service installed/updated,${RESET}"
-    echo "${GREEN}you can start dae by running:${RESET}"
-    echo "systemctl start dae"
-    echo "${GREEN}if you want to start dae at system boot:${RESET}"
-    echo "systemctl enable dae"
+    echo "${GREEN}Systemd service installed/updated.${RESET}"
+    rm dae.service
+}
+
+download_openrc_service(){
+    echo "${GREEN}Download OpenRC service...${RESET}"
+    if ! curl -L -# $openrc_service_url -o dae-openrc.sh; then
+        echo "${RED}error: Failed to download OpenRC Service!${RESET}"
+        echo "${RED}Please check your network and try again.${RESET}"
+        exit 1
+    fi
 }
 
 install_openrc_service(){
     echo "${GREEN}Installing/updating OpenRC service...${RESET}"
-    echo '#!/sbin/openrc-run
-description="dae Service"
-command="/usr/local/bin/dae"
-command_args="run -c /usr/local/etc/dae/config.dae"
-pidfile="/run/${RC_SVCNAME}.pid"
-command_background="yes"
-output_log="/var/log/dae/access.log"
-error_log="/var/log/dae/error.log"
-supervisor="supervise-daemon"
-rc_ulimit="-n 30000"
-rc_cgroup_cleanup="yes"
-
-depend() {
-    after docker net net-online sysctl
-    use net
+    cat dae-openrc.sh | tee /etc/init.d/dae
+    chmod +x /etc/init.d/dae
+    echo "${GREEN}OpenRC service installed/updated${RESET}"
+    rm dae-openrc.sh
 }
 
-start_pre() {
-    if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
-        error "bpf filesystem not mounted, exiting..."
-        return 1
+download_service(){
+    if [ -f /usr/lib/systemd/systemd ]; then
+        download_systemd_service
+    elif [ -f /sbin/openrc-run ]; then
+        download_openrc_service
     fi
-    if [ -d /sys/fs/cgroup ] && ! mountinfo -q /sys/fs/cgroup/; then
-        error "cgroup filesystem not mounted, exiting..."
-        return 1
+}
+
+install_service(){
+    if [ -f /usr/lib/systemd/systemd ]; then
+        install_systemd_service
+    elif [ -f /sbin/openrc-run ]; then
+        install_openrc_service
+    else
+        echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
+        echo "${YELLOW}You should write service file/script by yourself.${RESET}"
     fi
-    if [ ! -d "/tmp/dae/" ]; then 
-        mkdir "/tmp/dae" 
-    fi
-    if [ ! -L "/var/log/dae" ]; then
-        ln -s "/tmp/dae/" "/var/log/"
-    fi
-    if ! /usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae; then
-        eerror "checking config file /usr/local/etc/dae/config.dae failed, exiting..."
-        return 1
-    fi
-}' > /etc/init.d/dae
-    chmod +x /etc/init.d/dae
-    echo "${GREEN}OpenRC service installed/updated,${RESET}"
-    echo "${GREEN}you can start dae by running:${RESET}"
-    echo "rc-service dae start"
-    echo "${GREEN}if you want to start dae at system boot:${RESET}"
-    echo "rc-update add dae default"
 }
 
 check_local_version(){
     if ! command -v /usr/local/bin/dae > /dev/null 2>&1; then
         current_version=0
     else
-        current_version=$(/usr/local/bin/dae --version | awk '{print $3}')
+        current_version=$(/usr/local/bin/dae --version | awk 'NR==1' | awk '{print $3}')
     fi
 }
 
@@ -171,6 +170,19 @@ check_online_version(){
         latest_version=$(grep -i ^location: "$temp_file" | awk '{print $2}' | tr -d '\r' | awk -F 'tag/' '{print $2}')
     fi
     rm "$temp_file"
+}
+
+compare_version(){
+    if [[ $latest_version = "$current_version" ]]; then
+        # Don't need update
+        compare_status=0
+    elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -rV | head -n1)" = "$current_version" ]]; then
+        # Local version is greater than remote version
+        compare_status=1
+    else
+        # Local version is older than remote version
+        compare_status=2
+    fi
 }
 
 check_arch() {
@@ -240,15 +252,14 @@ check_share_dir() {
 }
 
 download_geoip() {
-    geoip_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geoip.dat"
     echo "${GREEN}Downloading GeoIP database...${RESET}"
     echo "${GREEN}Downloading from: $geoip_url${RESET}"
-    if ! curl -LO $geoip_url --progress-bar; then
+    if ! curl -LO "$geoip_url" --progress-bar; then
         echo "${RED}error: Failed to download GeoIP database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     fi
-    if ! curl -sLO $geoip_url.sha256sum; then
+    if ! curl -sLO "$geoip_url".sha256sum; then
         echo "${RED}error: Failed to download the checksum file of GeoIP database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         rm -f geoip.dat
@@ -273,15 +284,14 @@ update_geoip() {
 }
 
 download_geosite() {
-    geosite_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geosite.dat"
     echo "${GREEN}Downloading GeoSite database...${RESET}"
     echo "${GREEN}Downloading from: $geosite_url${RESET}"
-    if ! curl -LO $geosite_url --progress-bar; then
+    if ! curl -LO "$geosite_url" --progress-bar; then
         echo "${RED}error: Failed to download GeoSite database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     fi
-    if ! curl -sLO $geosite_url.sha256sum; then
+    if ! curl -sLO "$geosite_url".sha256sum; then
         echo "${RED}error: Failed to download the checksum file of GeoSite database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         rm -f geosite.dat
@@ -343,10 +353,9 @@ start_dae(){
 }
 
 download_dae() {
-    download_url=https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip
     echo "${GREEN}Downloading dae...${RESET}"
-    echo "${GREEN}Downloading from: $download_url${RESET}"
-    if ! curl -LO "$download_url" --progress-bar; then
+    echo "${GREEN}Downloading from: $dae_url${RESET}"
+    if ! curl -LO "$dae_url" --progress-bar; then
         echo "${RED}error: Failed to download dae!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
@@ -358,7 +367,7 @@ download_dae() {
         rm -f dae-linux-"$MACHINE".zip
         exit 1
     fi
-    if ! curl -sL "$download_url".dgst -o dae-linux-"$MACHINE".zip.dgst; then
+    if ! curl -sL "$dae_hash_url" -o dae-linux-"$MACHINE".zip.dgst; then
         echo "${RED}error: Failed to download the checksum file!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         rm -f dae-linux-"$MACHINE".zip.dgst
@@ -388,13 +397,12 @@ install_dae() {
 }
 
 download_example_config() {
-    example_url="https://github.com/daeuniverse/dae/raw/$latest_version/example.dae"
     echo "${GREEN}Downloading dae's template configuration file...${RESET}"
-    echo "${GREEN}Downloading from: $example_url${RESET}"
+    echo "${GREEN}Downloading from: $example_config_url${RESET}"
     if [ ! -d /usr/local/etc/dae ]; then
         mkdir -p /usr/local/etc/dae
     fi
-    if ! curl -L "$example_url" -o /usr/local/etc/dae/example.dae --progress-bar; then
+    if ! curl -L "$example_config_url" -o /usr/local/etc/dae/example.dae --progress-bar; then
         notify_example="yes"
     fi
 }
@@ -403,31 +411,20 @@ notify_configuration() {
     if [ "$notify_example" = 'yes' ];then
         echo "${YELLOW}warning: Failed to download example config file.${RESET}"
         echo "${YELLOW}You can download it from https://github.com/daeuniverse/dae/raw/$latest_version/example.dae${RESET}"
-    else
-        echo "${GREEN}Example config file downloaded to /usr/local/etc/dae/example.dae${RESET}"
     fi
-    echo "${YELLOW}It is recommended to compare the differences between your configuration file and the template file, and to refer to the latest Release Note to ensure that your configuration will work with the new version of dae.""${RESET}"
-
 }
 
 installation() {
-    check_arch
     download_dae
     download_geoip
     download_geosite
     download_example_config
+    download_service
     stop_dae
     install_dae
     update_geoip
     update_geosite
-    if [ -f /usr/lib/systemd/systemd ]; then
-        install_systemd_service
-    elif [ -f /sbin/openrc-run ]; then
-        install_openrc_service
-    else
-        echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
-        echo "${YELLOW}You should write service file/script by yourself.${RESET}"
-    fi
+    install_service
     start_dae
     echo "${GREEN}Installation finished, dae version: $latest_version${RESET}"
     echo "${GREEN}Your config file should be:${RESET} /usr/local/etc/dae/config.dae"
@@ -436,6 +433,7 @@ installation() {
 }
 
 should_we_install_dae() {
+    check_arch
     check_virtualization
     if [ "$force_install" = 'yes' ]; then
         check_online_version
@@ -444,12 +442,18 @@ should_we_install_dae() {
         check_local_version
         check_online_version
     fi
-    if [ "$current_version" = "$latest_version" ]; then
+    compare_version
+    get_download_urls
+    if [ "$compare_status" = '0' ]; then
         echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
         notice_installled_tool
     elif [ "$current_version" = '0' ]; then
         echo "${GREEN}Installing dae version $latest_version... ${RESET}"
         installation
+    elif [ "$compare_status" = '1' ]; then
+        echo "${YELLOW}Local version $current_version is greater than remote version $latest_version, ${RESET}"
+        echo "${GREEN}If you still want to install, use force-install arg anyway.${RESET}"
+        exit 0
     else
         echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
         installation
@@ -458,11 +462,12 @@ should_we_install_dae() {
 
 show_helps() {
     echo -e "${GREEN}""\033[1;4mUsage:\033[0m""${RESET}"
-    echo "  installer [command]"
+    echo "  $0 [command]"
     echo ' '
     echo -e "${GREEN}""\033[1;4mAvailable commands:\033[0m""${RESET}"
-    echo "  install             install/update dae if no dae or dae version isn't as same as GitHub latest release"
-    echo "  force-install       install/update latest version of dae without checking local dae version"
+    echo "  use-cdn             use Cloudflare Worker and jsDelivr CDN to download files"
+    echo "  install             install/update dae, default behavior"
+    echo "  force-install       install/update latest version of dae without checking local version"
     echo "  update-geoip        update GeoIP database"
     echo "  update-geosite      update GeoSite database"
     echo "  help                show this help message"
@@ -471,11 +476,18 @@ show_helps() {
 # Main
 current_dir=$(pwd)
 cd /tmp/ || (echo "${YELLOW}Failed to cd /tmp/${RESET}"; exit 1)
-if [ "$1" = "" ]; then
+if [ "$1" = "" ] || [ "$1" = "use-cdn" ]; then
+    if [ "$1" = "use-cdn" ]; then
+        use_cdn='yes'
+    fi
     should_we_install_dae
 fi
 while [ $# != 0 ] ; do
     case "$1" in
+        use-cdn)
+            use_cdn='yes'
+            shift
+            ;;
         install)
             normal_install='yes'
             shift
@@ -515,10 +527,12 @@ if [ "$force_install" = 'yes' ] || [ "$normal_install" = 'yes' ];then
     should_we_install_dae
 fi
 if [ "$geoip_should_update" = 'yes' ];then
+    get_download_urls
     download_geoip
     update_geoip
 fi
 if [ "$geosite_should_update" = 'yes' ];then
+    get_download_urls
     download_geosite
     update_geosite
 fi
