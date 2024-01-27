@@ -190,7 +190,7 @@ check_online_version(){
         rm "$temp_file"
         exit 1
     else
-        latest_version="$(grep '"tag_name":' "$temp_file" | awk -F '"' '{printf $4}')"
+        latest_version="$(awk -F "tag_name" '{printf $2}' < "$temp_file" | awk -F "," '{printf $1}' | awk -F '"' '{printf $3}')"
         rm "$temp_file"
     fi
 }
