@@ -118,7 +118,7 @@ check_virtualization() {
 
 download_systemd_service(){
     echo "${GREEN}Download systemd service...${RESET}"
-    if ! curl -LO -# $systemd_service_url; then
+    if ! curl -LO -# "$systemd_service_url"; then
         echo "${RED}error: Failed to download Systemd Service!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
