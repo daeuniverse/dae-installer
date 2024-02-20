@@ -483,8 +483,7 @@ installation() {
 }
 
 should_we_install_dae() {
-    check_arch
-    check_virtualization
+    check_virtualization && check_arch    
     if [ "$force_install" = 'yes' ]; then
         check_online_version
         current_version='0'
