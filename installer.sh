@@ -111,16 +111,14 @@ check_virtualization() {
         echo "${RED}error: OpenVZ is not supported!${RESET}"
         exit 1
     fi
-    if [ "$(virt-what)" = '' ]; then
-        is_virt=no
-    else
+    if [ -n "$(virt-what)" ]; then
         is_virt=yes
     fi
 }
 
 download_systemd_service(){
     echo "${GREEN}Download systemd service...${RESET}"
-    if ! curl -LO -# $systemd_service_url; then
+    if ! curl -LO -# "$systemd_service_url"; then
         echo "${RED}error: Failed to download Systemd Service!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
@@ -485,8 +483,7 @@ installation() {
 }
 
 should_we_install_dae() {
-    check_arch
-    check_virtualization
+    check_virtualization && check_arch    
     if [ "$force_install" = 'yes' ]; then
         check_online_version
         current_version='0'
