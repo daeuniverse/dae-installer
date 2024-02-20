@@ -111,9 +111,7 @@ check_virtualization() {
         echo "${RED}error: OpenVZ is not supported!${RESET}"
         exit 1
     fi
-    if [ "$(virt-what)" = '' ]; then
-        is_virt=no
-    else
+    if [ -n "$(virt-what)" ]; then
         is_virt=yes
     fi
 }
