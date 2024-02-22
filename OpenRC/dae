@@ -6,7 +6,6 @@ pidfile="/run/${RC_SVCNAME}.pid"
 command_background="yes"
 output_log="/var/log/dae/access.log"
 error_log="/var/log/dae/error.log"
-supervisor="supervise-daemon"
 rc_ulimit="-n 30000"
 rc_cgroup_cleanup="yes"
 
