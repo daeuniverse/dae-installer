@@ -321,7 +321,7 @@ download_geosite() {
     geosite_local_sha256=$(SHA256SUM geosite.dat)
     geosite_remote_sha256=$(cat geosite.dat.sha256sum | awk -F ' ' '{print $1}')
     if [ "$geosite_local_sha256" != "$geosite_remote_sha256" ]; then
-        echo "${RED}error: The checksum of the downloaded GeoIP database does not match!${RESET}"
+        echo "${RED}error: The checksum of the downloaded GeoSite database does not match!${RESET}"
         echo "${RED}Local SHA256: $geosite_local_sha256${RESET}"
         echo "${RED}Remote SHA256: $geosite_remote_sha256${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
