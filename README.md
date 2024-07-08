@@ -21,6 +21,12 @@ If you have difficulty accessing GitHub, you can use this command instead:
 sudo sh -c "$(wget -qO- https://cdn.jsdelivr.net/gh/daeuniverse/dae-installer/installer.sh)" @ install use-cdn
 ```
 
+If this script recognizes the wrong `$MACHINE`, you can manually specify it:
+
+```sh
+sudo MACHINE="x86_64" sh -c "$(wget -qO- https://github.com/daeuniverse/dae-installer/raw/main/installer.sh)" @ install
+```
+
 ### Uninstall dae
 
 ```sh
