@@ -208,6 +208,9 @@ compare_version(){
 
 check_arch() {
 if [ "$(uname)" = 'Linux' ]; then
+    if [ -n "$MACHINE" ]; then
+        return
+    fi
 case "$(uname -m)" in
       'i386' | 'i686')
         MACHINE='x86_32'
