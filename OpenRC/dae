@@ -16,6 +16,15 @@ depend() {
 }
 
 start_pre() {
+    while true; do
+    if ! ping -c 4 www.microsoft.com > /dev/null; then
+        echo "Network isn't ready yet, waiting."
+        sleep 6
+    else
+        echo "Network is online, starting dae service."
+        break
+    fi
+    done
     if [ -d /sys/fs/bpf ] && ! mountinfo -q /sys/fs/bpf; then
         eerror "BPF filesystem not mounted, exiting..."
         return 1
