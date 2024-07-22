@@ -75,6 +75,18 @@ PIDFILE=/var/run/dae-daemon.pid
 CONFIG="/usr/local/etc/dae/config.dae"
 PARAMS="run -c $CONFIG"
 
+check_network(){
+    while true; do
+    if ! ping -c 4 www.microsoft.com > /dev/null; then
+        echo "Network is NOT ready yet, waiting."
+        sleep 6
+    else
+        echo "Network is online, starting dae service."
+        break
+    fi
+    done
+}
+
 check_config() {
     if ! $DAEMON validate -c $CONFIG; then
         echo "checking config file $CONFIG failed, exiting..."
@@ -97,6 +109,7 @@ check_status() {
 }
 
 start() {
+    check_network
     check_config
     echo "Starting dae service..."
     start-stop-daemon -S -b -p $PIDFILE -m -x $DAEMON -- $PARAMS

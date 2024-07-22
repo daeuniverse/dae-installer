@@ -76,7 +76,7 @@ fi
 
 get_download_urls(){
     if [ "$use_cdn" = 'yes' ]; then
-        systemd_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/install/dae.service"
+        systemd_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae-installer/Systemd/dae.service"
         openrc_service_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae-installer/OpenRC/dae"
         dae_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip"
         dae_hash_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst"
@@ -84,7 +84,7 @@ get_download_urls(){
         geoip_url="https://cdn.jsdelivr.net/gh/v2rayA/dist-v2ray-rules-dat/geoip.dat"
         geosite_url="https://cdn.jsdelivr.net/gh/v2rayA/dist-v2ray-rules-dat/geosite.dat"
     else
-        systemd_service_url="https://github.com/daeuniverse/dae/raw/$latest_version/install/dae.service"
+        systemd_service_url="https://github.com/daeuniverse/dae-installer/raw/main/Systemd/dae.service"
         openrc_service_url="https://github.com/daeuniverse/dae-installer/raw/main/OpenRC/dae"
         dae_url="https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip"
         dae_hash_url="https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst"
@@ -127,7 +127,20 @@ download_systemd_service(){
 
 install_systemd_service() {
     echo "${GREEN}Installing/updating systemd service...${RESET}"
-    cat dae.service | sed 's|usr/bin|usr/local/bin|g' | sed 's|etc|usr/local/etc|g' | tee /etc/systemd/system/dae.service
+    cat dae.service | tee /etc/systemd/system/dae.service
+    echo '
+#!/bin/sh
+
+while true; do
+  if ! ping -c 4 www.microsoft.com > /dev/null; then
+    echo "Network is NOT ready yet, waiting."
+    sleep 6
+  else
+    echo "Network is online, starting dae service."
+    break
+  fi
+done' > /usr/local/bin/dae-network-online-check.sh
+    chmod +x /usr/local/bin/dae-network-online-check.sh
     systemctl daemon-reload
     echo "${GREEN}Systemd service installed/updated.${RESET}"
     rm dae.service

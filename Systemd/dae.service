@@ -1,0 +1,20 @@
+[Unit]
+Description=dae Service
+Documentation=https://github.com/daeuniverse/dae
+After=network-online.target docker.service systemd-sysctl.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=root
+LimitNPROC=512
+LimitNOFILE=1048576
+ExecStartPre=/usr/local/bin/dae-network-online-check.sh
+ExecStartPre=/usr/local/bin/dae validate -c /usr/local/etc/dae/config.dae
+ExecStart=/usr/local/bin/dae run --disable-timestamp -c /usr/local/etc/dae/config.dae
+ExecReload=/usr/local/bin/dae reload $MAINPID
+Restart=on-abnormal
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target
