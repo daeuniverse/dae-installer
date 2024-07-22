@@ -78,7 +78,7 @@ PARAMS="run -c $CONFIG"
 check_network(){
     while true; do
     if ! ping -c 4 www.microsoft.com > /dev/null; then
-        echo "Network isn't ready yet, waiting."
+        echo "Network is NOT ready yet, waiting."
         sleep 6
     else
         echo "Network is online, starting dae service."
