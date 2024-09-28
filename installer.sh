@@ -81,6 +81,9 @@ get_download_urls(){
         dae_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip"
         dae_hash_url="https://github.abskoop.workers.dev/https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst"
         example_config_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/example.dae"
+        bash_completion_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/install/shell-completion/dae.bash"
+        zsh_completion_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/install/shell-completion/dae.zsh"
+        fish_completion_url="https://cdn.jsdelivr.net/gh/daeuniverse/dae@$latest_version/install/shell-completion/dae.fish"
         geoip_url="https://cdn.jsdelivr.net/gh/v2rayA/dist-v2ray-rules-dat/geoip.dat"
         geosite_url="https://cdn.jsdelivr.net/gh/v2rayA/dist-v2ray-rules-dat/geosite.dat"
     else
@@ -89,6 +92,9 @@ get_download_urls(){
         dae_url="https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip"
         dae_hash_url="https://github.com/daeuniverse/dae/releases/download/$latest_version/dae-linux-$MACHINE.zip.dgst"
         example_config_url="https://github.com/daeuniverse/dae/raw/$latest_version/example.dae"
+        bash_completion_url="https://github.com/daeuniverse/dae/raw/$latest_version/install/shell-completion/dae.bash"
+        zsh_completion_url="https://github.com/daeuniverse/dae/raw/$latest_version/install/shell-completion/dae.zsh"
+        fish_completion_url="https://github.com/daeuniverse/dae/raw/$latest_version/install/shell-completion/dae.fish"
         geoip_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geoip.dat"
         geosite_url="https://github.com/v2rayA/dist-v2ray-rules-dat/raw/master/geosite.dat"
     fi
@@ -431,6 +437,45 @@ download_example_config() {
     fi
 }
 
+download_bash_completion() {
+    [ -d /usr/share/bash-completion/completions ] || mkdir -p /usr/share/bash-completion/completions
+    echo "${GREEN}Downloading bash completion file...${RESET}"
+    echo "${GREEN}Downloading from: $bash_completion_url${RESET}"
+    if ! curl -L "$bash_completion_url" -o /usr/share/bash-completion/completions/dae --progress-bar; then
+        echo "${YELLOW}Failed to download bash completion file.${RESET}"
+    fi
+}
+
+download_zsh_completion() {
+    [ -d /usr/share/zsh/site-functions ] || mkdir -p /usr/share/zsh/site-functions
+    echo "${GREEN}Downloading zsh completion file...${RESET}"
+    echo "${GREEN}Downloading from: $zsh_completion_url${RESET}"
+    if ! curl -L "$zsh_completion_url" -o /usr/share/zsh/site-functions/_dae --progress-bar; then
+        echo "${YELLOW}Failed to download zsh completion file.${RESET}"
+    fi
+}
+
+download_fish_completion() {
+    [ -d /usr/share/fish/vendor_completions.d ] || mkdir -p /usr/share/fish/vendor_completions.d
+    echo "${GREEN}Downloading fish completion file...${RESET}"
+    echo "${GREEN}Downloading from: $fish_completion_url${RESET}"
+    if ! curl -L "$fish_completion_url" -o /usr/share/fish/vendor_completions.d/dae.fish --progress-bar; then
+        echo "${YELLOW}Failed to download fish completion file.${RESET}"
+    fi
+}
+
+download_completions() {
+    if command -v bash > /dev/null 2>&1; then
+        download_bash_completion
+    fi
+    if command -v zsh > /dev/null 2>&1; then
+        download_zsh_completion
+    fi
+    if command -v fish > /dev/null 2>&1; then
+        download_fish_completion
+    fi
+}
+
 notify_configuration() {
     echo '----------------------------------------------------------------------'
     if [ "$notify_example" = 'yes' ];then
@@ -475,6 +520,7 @@ installation() {
     download_geosite
     download_example_config
     download_service
+    download_completions
     stop_dae
     install_dae
     update_geoip
