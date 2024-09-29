@@ -104,7 +104,7 @@ check_virtualization() {
         esac
     fi
     if [ "$is_container" = 'yes' ]; then
-        echo "${RED}warning: dae don't support any container, stop installation.${RESET}"
+        echo "${RED}warning: dae doesn't support any container, stop installation.${RESET}"
         exit 1
     fi
 }
