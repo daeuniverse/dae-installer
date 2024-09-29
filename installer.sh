@@ -45,7 +45,10 @@ elif command -v busybox >/dev/null 2>&1; then
 fi
 
 ## Check curl, unzip, virt-what
-for tool in curl unzip virt-what; do
+if ! command -v systemd-detect-virt > /dev/null 2>&1; then
+    tool_need="virt-what"
+fi
+for tool in curl unzip; do
     if ! command -v $tool> /dev/null 2>&1; then
         tool_need="$tool"" ""$tool_need"
     fi
@@ -54,7 +57,7 @@ if [ -n "$tool_need" ]; then
     if command -v apt > /dev/null 2>&1; then
         command_install_tool="apt update; apt install $tool_need -y"
     elif command -v dnf > /dev/null 2>&1; then
-        command_install_tool="dnf install $tool_need -y"
+        command_install_tool="dnf check-update; dnf install $tool_need -y"
     elif command -v yum > /dev/null  2>&1; then
         command_install_tool="yum install $tool_need -y"
     elif command -v zypper > /dev/null 2>&1; then
@@ -73,6 +76,38 @@ if [ -n "$tool_need" ]; then
         exit 1
     fi
 fi
+
+check_virtualization() {
+    if command -v systemd-detect-virt > /dev/null 2>&1; then
+        case "$(systemd-detect-virt)" in
+            openvz | lxc | lxc-libvirt | wsl | docker | podman | systemd-nspawn | proot | rkt | rouch)
+                is_container='yes'
+                ;;
+            qemu | kvm | amazon | zvm | vmware | microsoft | oracle | powervm | xen | bochs | uml | parallels | bhyve | qnx | acrn | apple | sre | google)
+                is_virt='yes'
+                ;;
+            none | *)
+                is_virt='no'
+                ;;
+        esac
+    elif command -v virt-what > /dev/null 2>&1; then
+        case "$(virt-what)" in
+            openvz | linux_vserver | lxc | lxc-libvirt | wsl | docker | podman | systemd-nspawn | proot | rkt | rouch)
+                is_container='yes'
+                ;;
+            hyprv | ibm_systemz | ibm_systemz-direct | ibm_systemz-lpar | ibm_systemz-zvm | kvm | parallels | powervm_lx86 | qemu | virtage | virtualbox | vmware | xen)
+                is_virt='yes'
+                ;;
+            *)
+                is_virt='no'
+                ;;
+        esac
+    fi
+    if [ "$is_container" = 'yes' ]; then
+        echo "${RED}warning: dae don't support any container, stop installation.${RESET}"
+        exit 1
+    fi
+}
 
 get_download_urls(){
     if [ "$use_cdn" = 'yes' ]; then
@@ -105,20 +140,6 @@ notice_installled_tool() {
         echo "${GREEN}You have installed the following tools during installation:${RESET}"
         echo "$tool_need"
         echo "${GREEN}You can uninstall them now if you want.${RESET}"
-    fi
-}
-
-check_virtualization() {
-    if [ -n "$(uname -r | grep microsoft)" ]; then
-        echo "${RED}error: WSL is not supported!${RESET}"
-        exit 1
-    fi
-    if [ "$(virt-what)" = 'openvz' ]; then
-        echo "${RED}error: OpenVZ is not supported!${RESET}"
-        exit 1
-    fi
-    if [ -n "$(virt-what)" ]; then
-        is_virt=yes
     fi
 }
 

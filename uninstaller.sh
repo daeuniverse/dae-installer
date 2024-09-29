@@ -46,6 +46,9 @@ remove_dae(){
         rm -f /usr/local/etc/dae/example.dae
         echo "${GREEN}Removed example.dae.${RESET}"
     fi
+    [ -f /usr/share/bash-completion/completions/dae ] && rm -f /usr/share/bash-completion/completions/dae
+    [ -f /usr/share/zsh/site-functions/_dae ] && rm -f /usr/share/zsh/site-functions/_dae
+    [ -f /usr/share/fish/vendor_completions.d/dae.fish ] && rm -f /usr/share/fish/vendor_completions.d/dae.fish
 }
 
 remove_dae_service(){
