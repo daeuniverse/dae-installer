@@ -37,14 +37,23 @@ Use `curl -sL` instead of `wget -qO-` if you want to use `curl` rather than `wge
 
 ## Commands
 
-```txt
-Available commands:
-  use-cdn             use Cloudflare Worker and jsDelivr CDN to download files
-  install             install/update dae, default behavior
-  force-install       install/update latest version of dae without checking local version
-  update-geoip        update GeoIP database
-  update-geosite      update GeoSite database
-  help                show this help message
+### Usage:
+
+```sh
+./installer.sh [command]
+```
+ 
+### Available commands:
+
+```
+use-cdn                 use Cloudflare Worker and jsDelivr CDN to download files
+install                 install/update dae, default behavior
+install-prerelease      install/update to the latest version of dae even if it's a prerelease
+install-prereleases     alias for install-prerelease
+force-install           install/update latest version of dae without checking local version
+update-geoip            update GeoIP database
+update-geosite          update GeoSite database
+help                    show this help message
 ```
 
 ## System Service
