@@ -79,14 +79,12 @@ fi
 
 echo_dae() {
     echo '
-   __| | __ _  ___
-  / _` |/ _` |/ _ \
- | (_| | (_| |  __/
-  \__,_|\__,_|\___|'
- echo "
- Copyright (C) $(date +%Y) @daeuniverse <https://github.com/daeuniverse>
- dae is a open-source software, liscensed under the AGPL-3.0 License.
- This software comes with ABSOLUTELY NO WARRANTY, use at your own risk."
+   __| | __ _  ___       Copyright (C) REAL_YEAR@daeuniverse
+  / _` |/ _` |/ _ \      https://github.com/daeuniverse/dae
+ | (_| | (_| |  __/      dae is an open-source software, liscensed
+  \__,_|\__,_|\___|      under the AGPL-3.0 License
+
+This software comes with ABSOLUTELY NO WARRANTY, use at your own risk.' | sed "s/REAL_YEAR/$(date +%Y)/g"
 }
 
 check_virtualization() {
@@ -156,8 +154,9 @@ notice_installled_tool() {
 }
 
 download_systemd_service() {
+    systemd_service_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
     echo "${GREEN}Download systemd service...${RESET}"
-    if ! curl -LO -# "$systemd_service_url"; then
+    if ! curl -L -# "$systemd_service_url" -o "$systemd_service_temp_dir"/dae.service; then
         echo "${RED}error: Failed to download Systemd Service!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
@@ -166,15 +165,16 @@ download_systemd_service() {
 
 install_systemd_service() {
     echo "${GREEN}Installing/updating systemd service...${RESET}"
-    cat dae.service | sed 's|usr/bin|usr/local/bin|g' | sed 's|etc|usr/local/etc|g' | tee /etc/systemd/system/dae.service
+    sed 's|usr/bin|usr/local/bin|g' < "$systemd_service_temp_dir"/dae.service | sed 's|etc|usr/local/etc|g' | tee /etc/systemd/system/dae.service
     systemctl daemon-reload
     echo "${GREEN}Systemd service installed/updated.${RESET}"
-    rm dae.service
+    rm -rf "$systemd_service_temp_dir"
 }
 
 download_openrc_service() {
+    openrc_service_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
     echo "${GREEN}Download OpenRC service...${RESET}"
-    if ! curl -L -# $openrc_service_url -o dae-openrc.sh; then
+    if ! curl -L -# $openrc_service_url -o "$openrc_service_temp_dir"/dae-openrc.sh; then
         echo "${RED}error: Failed to download OpenRC Service!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
@@ -183,10 +183,10 @@ download_openrc_service() {
 
 install_openrc_service() {
     echo "${GREEN}Installing/updating OpenRC service...${RESET}"
-    tee /etc/init.d/dae <dae-openrc.sh
+    tee /etc/init.d/dae < "$openrc_service_temp_dir"/dae-openrc.sh
     chmod +x /etc/init.d/dae
     echo "${GREEN}OpenRC service installed/updated${RESET}"
-    rm dae-openrc.sh
+    rm -rf "$openrc_service_temp_dir"
 }
 
 download_service() {
@@ -256,14 +256,17 @@ check_online_version() {
 
 compare_version() {
     if [[ $latest_version = "$current_version" ]]; then
-        # Don't need update
-        compare_status=0
+        compare_status=0            # Don't need update
+    elif  [[ $(echo "$current_version" | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+" ) = $(echo "$latest_version" | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+") ]]; then
+        if ! grep -q -E 'rc' <<< "$latest_version"; then
+            compare_status=2        # Local version is less than remote version
+        fi
+    elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -V | head -n1)" = "$current_version" ]]; then
+        compare_status=2            # Local version is less than remote version
     elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -rV | head -n1)" = "$current_version" ]]; then
-        # Local version is greater than remote version
-        compare_status=1
+        compare_status=1            # Local version is greater than remote version
     else
-        # Local version is older than remote version
-        compare_status=2
+        compare_status=2            # Local version is less than remote version
     fi
 }
 
@@ -337,67 +340,69 @@ check_share_dir() {
 }
 
 download_geoip() {
+    geoip_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
     echo "${GREEN}Downloading GeoIP database...${RESET}"
     echo "${GREEN}Downloading from: $geoip_url${RESET}"
-    if ! curl -LO "$geoip_url" --progress-bar; then
+    if ! curl -L "$geoip_url" -o "$geoip_temp_dir"/geoip.dat --progress-bar; then
         echo "${RED}error: Failed to download GeoIP database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     fi
-    if ! curl -sLO "$geoip_url".sha256sum; then
+    if ! curl -sL "$geoip_url".sha256sum -o "$geoip_temp_dir"/geoip.dat.sha256sum; then
         echo "${RED}error: Failed to download the checksum file of GeoIP database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         rm -f geoip.dat
         exit 1
     fi
-    geoip_local_sha256=$(SHA256SUM geoip.dat)
-    geoip_remote_sha256=$(cat geoip.dat.sha256sum | awk -F ' ' '{print $1}')
+    geoip_local_sha256=$(SHA256SUM "$geoip_temp_dir"/geoip.dat)
+    geoip_remote_sha256=$(awk -F ' ' '{print $1}' < "$geoip_temp_dir"/geoip.dat.sha256sum)
     if [ "$geoip_local_sha256" != "$geoip_remote_sha256" ]; then
         echo "${RED}error: The checksum of the downloaded GeoIP database does not match!${RESET}"
         echo "${RED}Local SHA256: $geoip_local_sha256${RESET}"
         echo "${RED}Remote SHA256: $geoip_remote_sha256${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f geoip.dat
+        rm -rf "$geoip_temp_dir"
         exit 1
     fi
 }
 update_geoip() {
     check_share_dir
-    mv geoip.dat /usr/local/share/dae/
-    rm -f geoip.dat.sha256sum
+    cp "$geoip_temp_dir"/geoip.dat /usr/local/share/dae/
+    rm -rf "$geoip_temp_dir"
     echo "${GREEN}GeoIP database have been installed/updated.${RESET}"
 }
 
 download_geosite() {
+    geosite_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
     echo "${GREEN}Downloading GeoSite database...${RESET}"
     echo "${GREEN}Downloading from: $geosite_url${RESET}"
-    if ! curl -LO "$geosite_url" --progress-bar; then
+    if ! curl -L "$geosite_url" -o "$geosite_temp_dir"/geosite.dat --progress-bar; then
         echo "${RED}error: Failed to download GeoSite database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
         exit 1
     fi
-    if ! curl -sLO "$geosite_url".sha256sum; then
+    if ! curl -sL "$geosite_url".sha256sum -o "$geosite_temp_dir"/geosite.dat.sha256sum; then
         echo "${RED}error: Failed to download the checksum file of GeoSite database!${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f geosite.dat
+        rm -rf "$geosite_temp_dir"
         exit 1
     fi
-    geosite_local_sha256=$(SHA256SUM geosite.dat)
-    geosite_remote_sha256=$(cat geosite.dat.sha256sum | awk -F ' ' '{print $1}')
+    geosite_local_sha256=$(SHA256SUM "$geosite_temp_dir"/geosite.dat)
+    geosite_remote_sha256=$(awk -F ' ' '{print $1}' < "$geosite_temp_dir"/geosite.dat.sha256sum)
     if [ "$geosite_local_sha256" != "$geosite_remote_sha256" ]; then
         echo "${RED}error: The checksum of the downloaded GeoSite database does not match!${RESET}"
         echo "${RED}Local SHA256: $geosite_local_sha256${RESET}"
         echo "${RED}Remote SHA256: $geosite_remote_sha256${RESET}"
         echo "${RED}Please check your network and try again.${RESET}"
-        rm -f geosite.dat geosite.dat.sha256sum
+        rm -rf "$geosite_temp_dir"
         exit 1
     fi
 }
 
 update_geosite() {
     check_share_dir
-    mv geosite.dat /usr/local/share/dae/
-    rm -f geosite.dat.sha256sum
+    cp "$geosite_temp_dir"/geosite.dat /usr/local/share/dae/
+    rm -rf "$geosite_temp_dir"
     echo "${GREEN}GeoSite database have been installed/updated.${RESET}"
 }
 
