@@ -1,27 +1,37 @@
 #!/usr/bin/env sh
 
-# shellcheck disable=SC3000-SC4000
-
 set -e
 
 ## Color
-if command -v tput >/dev/null 2>&1; then
-    RED=$(tput setaf 1)
-    GREEN=$(tput setaf 2)
-    YELLOW=$(tput setaf 3)
-    RESET=$(tput sgr0)
-fi
+echo_red() {
+  printf '\033[31m%s\033[0m\n' "$*"
+}
+echo_red_bold() {
+  printf "\033[1;31m%s\033[0m\n" "$1"
+}
+echo_yellow() {
+  printf '\033[33m%s\033[0m\n' "$*"
+}
+echo_yellow_bold() {
+  printf "\033[1;33m%s\033[0m\n" "$1"
+}
+echo_green() {
+  printf '\033[32m%s\033[0m\n' "$*"
+}
+echo_green_bold() {
+  printf "\033[1;32m%s\033[0m\n" "$1"
+}
 
 ## Check System
 if [ "$(uname)" != 'Linux' ]; then
-    echo "${RED}error: This script only support Linux!${RESET}"
+    echo_red "error: This script only support Linux!"
     exit 1
 fi
 
 ## Check root
 user_id="$(id -u "$(whoami)")"
 if [ "$user_id" -ne 0 ]; then
-    echo "${RED}error: This script must be run as root!${RESET}"
+    echo_red "error: This script must be run as root!"
     exit 1
 fi
 
@@ -67,12 +77,12 @@ if [ -n "$tool_need" ]; then
     elif command -v apk >/dev/null 2>&1; then
         command_install_tool="apk add $tool_need"
     else
-        echo "$RED""You should install ""$tool_need""then try again.""$RESET"
+        echo_red "You should install ""$tool_need""then try again."
         exit 1
     fi
     if ! /bin/sh -c "$command_install_tool"; then
-        echo "$RED""Use system package manager to install $tool_need failed,""$RESET"
-        echo "$RED""You should install ""$tool_need""then try again.""$RESET"
+        echo_red "Use system package manager to install $tool_need failed,"
+        echo_red "You should install ""$tool_need""then try again."
         exit 1
     fi
 fi
@@ -114,7 +124,7 @@ check_virtualization() {
         esac
     fi
     if [ "$is_container" = 'yes' ]; then
-        echo "${RED}warning: dae doesn't support any container, stop installation.${RESET}"
+        echo_red "warning: dae doesn't support any container, stop installation."
         exit 1
     fi
 }
@@ -147,45 +157,45 @@ get_download_urls() {
 
 notice_installled_tool() {
     if [ -n "$tool_need" ]; then
-        echo "${GREEN}You have installed the following tools during installation:${RESET}"
+        echo_green "You have installed the following tools during installation:"
         echo "$tool_need"
-        echo "${GREEN}You can uninstall them now if you want.${RESET}"
+        echo_green "You can uninstall them now if you want."
     fi
 }
 
 download_systemd_service() {
     systemd_service_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
-    echo "${GREEN}Download systemd service...${RESET}"
+    echo_green "Download systemd service..."
     if ! curl -L -# "$systemd_service_url" -o "$systemd_service_temp_dir"/dae.service; then
-        echo "${RED}error: Failed to download Systemd Service!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download Systemd Service!"
+        echo_red "Please check your network and try again."
         exit 1
     fi
 }
 
 install_systemd_service() {
-    echo "${GREEN}Installing/updating systemd service...${RESET}"
+    echo_green "Installing/updating systemd service..."
     sed 's|usr/bin|usr/local/bin|g' < "$systemd_service_temp_dir"/dae.service | sed 's|etc|usr/local/etc|g' | tee /etc/systemd/system/dae.service
     systemctl daemon-reload
-    echo "${GREEN}Systemd service installed/updated.${RESET}"
+    echo_green "Systemd service installed/updated."
     rm -rf "$systemd_service_temp_dir"
 }
 
 download_openrc_service() {
     openrc_service_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
-    echo "${GREEN}Download OpenRC service...${RESET}"
+    echo_green "Download OpenRC service..."
     if ! curl -L -# $openrc_service_url -o "$openrc_service_temp_dir"/dae-openrc.sh; then
-        echo "${RED}error: Failed to download OpenRC Service!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download OpenRC Service!"
+        echo_red "Please check your network and try again."
         exit 1
     fi
 }
 
 install_openrc_service() {
-    echo "${GREEN}Installing/updating OpenRC service...${RESET}"
+    echo_green "Installing/updating OpenRC service..."
     tee /etc/init.d/dae < "$openrc_service_temp_dir"/dae-openrc.sh
     chmod +x /etc/init.d/dae
-    echo "${GREEN}OpenRC service installed/updated${RESET}"
+    echo_green "OpenRC service installed/updated"
     rm -rf "$openrc_service_temp_dir"
 }
 
@@ -203,8 +213,8 @@ install_service() {
     elif [ -f /sbin/openrc-run ]; then
         install_openrc_service
     else
-        echo "${YELLOW}warning: There is no Systemd or OpenRC on this system, no service would be installed.${RESET}"
-        echo "${YELLOW}You should write service file/script by yourself.${RESET}"
+        echo_yellow "warning: There is no Systemd or OpenRC on this system, no service would be installed."
+        echo_yellow "You should write service file/script by yourself."
     fi
 }
 
@@ -225,8 +235,8 @@ check_online_version() {
         fi
         temp_file="$(mktemp /tmp/dae.XXXXXX)"
         if ! curl -s "$tags_url" -o "$temp_file"; then
-            echo "${RED}error: Failed to get the latest version of dae!${RESET}"
-            echo "${RED}Please check your network and try again.${RESET}"
+            echo_red "error: Failed to get the latest version of dae!"
+            echo_red "Please check your network and try again."
             exit 1
         else
             latest_version="$(grep '/daeuniverse/dae/archive/refs/tags/' "$temp_file" | head -n 1 | awk -F '/tags/' '{print $2}' | awk -F '.zip' '{print $1}')"
@@ -244,8 +254,8 @@ check_online_version() {
              awk -F ' <h1 data-view-component="true" class="d-inline mr-3">' '{print $2}' | \
              awk -F '</h1>' '{print $1}' | \
              tee "$temp_file" >> /dev/null; then
-            echo "${RED}error: Failed to get the latest version of dae!${RESET}"
-            echo "${RED}Please check your network and try again.${RESET}"
+            echo_red "error: Failed to get the latest version of dae!"
+            echo_red "Please check your network and try again."
             exit 1
         else
             latest_version="$(cat "$temp_file" | head -n 1)"
@@ -255,15 +265,15 @@ check_online_version() {
 }
 
 compare_version() {
-    if [[ $latest_version = "$current_version" ]]; then
+    if [ "$latest_version" = "$current_version" ]; then
         compare_status=0            # Don't need update
-    elif  [[ $(echo "$current_version" | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+" ) = $(echo "$latest_version" | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+") ]]; then
-        if ! grep -q -E 'rc' <<< "$latest_version"; then
+    elif  [ "$(echo "$current_version" | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+" )" = "$(echo "$latest_version" | grep -Eo "v[0-9]+\.[0-9]+\.[0-9]+")" ]; then
+        if ! grep -q -E 'rc' < "$latest_version"; then
             compare_status=2        # Local version is less than remote version
         fi
-    elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -V | head -n1)" = "$current_version" ]]; then
+    elif [ "$(printf '%s\n' "$current_version" "$latest_version" | sort -V | head -n1)" = "$current_version" ]; then
         compare_status=2            # Local version is less than remote version
-    elif [[ "$(printf '%s\n' "$current_version" "$latest_version" | sort -rV | head -n1)" = "$current_version" ]]; then
+    elif [ "$(printf '%s\n' "$current_version" "$latest_version" | sort -rV | head -n1)" = "$current_version" ]; then
         compare_status=1            # Local version is greater than remote version
     else
         compare_status=2            # Local version is less than remote version
@@ -312,7 +322,7 @@ check_arch() {
             MACHINE='riscv64'
             ;;
         *)
-            echo "${RED}error: The architecture is not supported.${RESET}"
+            echo_red "error: The architecture is not supported."
             exit 1
             ;;
         esac
@@ -328,7 +338,7 @@ check_arch() {
             fi
         fi
     else
-        echo "${RED}error: The operating system is not supported.${RESET}"
+        echo_red "error: The operating system is not supported."
         exit 1
     fi
 }
@@ -341,26 +351,26 @@ check_share_dir() {
 
 download_geoip() {
     geoip_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
-    echo "${GREEN}Downloading GeoIP database...${RESET}"
-    echo "${GREEN}Downloading from: $geoip_url${RESET}"
+    echo_green "Downloading GeoIP database..."
+    echo_green "Downloading from: $geoip_url"
     if ! curl -L "$geoip_url" -o "$geoip_temp_dir"/geoip.dat --progress-bar; then
-        echo "${RED}error: Failed to download GeoIP database!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download GeoIP database!"
+        echo_red "Please check your network and try again."
         exit 1
     fi
     if ! curl -sL "$geoip_url".sha256sum -o "$geoip_temp_dir"/geoip.dat.sha256sum; then
-        echo "${RED}error: Failed to download the checksum file of GeoIP database!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download the checksum file of GeoIP database!"
+        echo_red "Please check your network and try again."
         rm -f geoip.dat
         exit 1
     fi
     geoip_local_sha256=$(SHA256SUM "$geoip_temp_dir"/geoip.dat)
     geoip_remote_sha256=$(awk -F ' ' '{print $1}' < "$geoip_temp_dir"/geoip.dat.sha256sum)
     if [ "$geoip_local_sha256" != "$geoip_remote_sha256" ]; then
-        echo "${RED}error: The checksum of the downloaded GeoIP database does not match!${RESET}"
-        echo "${RED}Local SHA256: $geoip_local_sha256${RESET}"
-        echo "${RED}Remote SHA256: $geoip_remote_sha256${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: The checksum of the downloaded GeoIP database does not match!"
+        echo_red "Local SHA256: $geoip_local_sha256"
+        echo_red "Remote SHA256: $geoip_remote_sha256"
+        echo_red "Please check your network and try again."
         rm -rf "$geoip_temp_dir"
         exit 1
     fi
@@ -369,31 +379,31 @@ update_geoip() {
     check_share_dir
     cp "$geoip_temp_dir"/geoip.dat /usr/local/share/dae/
     rm -rf "$geoip_temp_dir"
-    echo "${GREEN}GeoIP database have been installed/updated.${RESET}"
+    echo_green "GeoIP database have been installed/updated."
 }
 
 download_geosite() {
     geosite_temp_dir=$(mktemp -d /tmp/dae.XXXXXX)
-    echo "${GREEN}Downloading GeoSite database...${RESET}"
-    echo "${GREEN}Downloading from: $geosite_url${RESET}"
+    echo_green "Downloading GeoSite database..."
+    echo_green "Downloading from: $geosite_url"
     if ! curl -L "$geosite_url" -o "$geosite_temp_dir"/geosite.dat --progress-bar; then
-        echo "${RED}error: Failed to download GeoSite database!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download GeoSite database!"
+        echo_red "Please check your network and try again."
         exit 1
     fi
     if ! curl -sL "$geosite_url".sha256sum -o "$geosite_temp_dir"/geosite.dat.sha256sum; then
-        echo "${RED}error: Failed to download the checksum file of GeoSite database!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download the checksum file of GeoSite database!"
+        echo_red "Please check your network and try again."
         rm -rf "$geosite_temp_dir"
         exit 1
     fi
     geosite_local_sha256=$(SHA256SUM "$geosite_temp_dir"/geosite.dat)
     geosite_remote_sha256=$(awk -F ' ' '{print $1}' < "$geosite_temp_dir"/geosite.dat.sha256sum)
     if [ "$geosite_local_sha256" != "$geosite_remote_sha256" ]; then
-        echo "${RED}error: The checksum of the downloaded GeoSite database does not match!${RESET}"
-        echo "${RED}Local SHA256: $geosite_local_sha256${RESET}"
-        echo "${RED}Remote SHA256: $geosite_remote_sha256${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: The checksum of the downloaded GeoSite database does not match!"
+        echo_red "Local SHA256: $geosite_local_sha256"
+        echo_red "Remote SHA256: $geosite_remote_sha256"
+        echo_red "Please check your network and try again."
         rm -rf "$geosite_temp_dir"
         exit 1
     fi
@@ -403,72 +413,72 @@ update_geosite() {
     check_share_dir
     cp "$geosite_temp_dir"/geosite.dat /usr/local/share/dae/
     rm -rf "$geosite_temp_dir"
-    echo "${GREEN}GeoSite database have been installed/updated.${RESET}"
+    echo_green "GeoSite database have been installed/updated."
 }
 
 stop_dae() {
     if command -v systemctl >/dev/null 2>&1 && [ "$(systemctl is-active dae)" = "active" ]; then
-        echo "${GREEN}Stopping dae...${RESET}"
+        echo_green "Stopping dae..."
         systemctl stop dae
         dae_stopped='1'
-        echo "${GREEN}Stopped dae${RESET}"
+        echo_green "Stopped dae"
     fi
     if [ -f /etc/init.d/dae ] && [ -f /run/dae.pid ] && [ -n "$(cat /run/dae.pid)" ]; then
-        echo "${GREEN}Stopping dae...${RESET}"
+        echo_green "Stopping dae..."
         /etc/init.d/dae stop
         dae_stopped='1'
-        echo "${GREEN}Stopped dae${RESET}"
+        echo_green "Stopped dae"
     fi
 }
 
 start_dae() {
     if [ -f /etc/systemd/system/dae.service ] && [ "$dae_stopped" = "1" ]; then
-        echo "${GREEN}Starting dae...${RESET}"
+        echo_green "Starting dae..."
         if ! systemctl start dae; then
-            echo "${RED}Failed to start dae!${RESET}"
-            echo "${RED}You should check your configuration file and try again.${RESET}"
+            echo_red "Failed to start dae!"
+            echo_red "You should check your configuration file and try again."
         else
-            echo "${GREEN}Started dae${RESET}"
+            echo_green "Started dae"
         fi
     fi
     if [ -f /etc/init.d/dae ] && [ "$dae_stopped" = "1" ]; then
-        echo "${GREEN}Starting dae...${RESET}"
+        echo_green "Starting dae..."
         if ! (/etc/init.d/dae start); then
-            echo "${RED}Failed to start dae!${RESET}"
-            echo "${RED}You should check your configuration file and try again.${RESET}"
+            echo_red "Failed to start dae!"
+            echo_red "You should check your configuration file and try again."
         else
-            echo "${GREEN}Started dae${RESET}"
+            echo_green "Started dae"
         fi
     fi
 }
 
 download_dae() {
-    echo "${GREEN}Downloading dae...${RESET}"
-    echo "${GREEN}Downloading from: $dae_url${RESET}"
+    echo_green "Downloading dae..."
+    echo_green "Downloading from: $dae_url"
     if ! curl -LO "$dae_url" --progress-bar; then
-        echo "${RED}error: Failed to download dae!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download dae!"
+        echo_red "Please check your network and try again."
         exit 1
     fi
     local_sha256=$(SHA256SUM dae-linux-"$MACHINE".zip | awk -F ' ' '{print $1}')
     if [ -z "$local_sha256" ]; then
-        echo "${RED}error: Failed to get the checksum of the downloaded file!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to get the checksum of the downloaded file!"
+        echo_red "Please check your network and try again."
         rm -f dae-linux-"$MACHINE".zip
         exit 1
     fi
     if ! curl -sL "$dae_hash_url" -o dae-linux-"$MACHINE".zip.dgst; then
-        echo "${RED}error: Failed to download the checksum file!${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: Failed to download the checksum file!"
+        echo_red "Please check your network and try again."
         rm -f dae-linux-"$MACHINE".zip.dgst
         exit 1
     fi
     remote_sha256=$(cat ./dae-linux-"$MACHINE".zip.dgst | awk -F "./dae-linux-$MACHINE.zip" 'NR==3' | awk '{print $1}')
     if [ "$local_sha256" != "$remote_sha256" ]; then
-        echo "${RED}error: The checksum of the downloaded file does not match!${RESET}"
-        echo "${RED}Local SHA256: $local_sha256${RESET}"
-        echo "${RED}Remote SHA256: $remote_sha256${RESET}"
-        echo "${RED}Please check your network and try again.${RESET}"
+        echo_red "error: The checksum of the downloaded file does not match!"
+        echo_red "Local SHA256: $local_sha256"
+        echo_red "Remote SHA256: $remote_sha256"
+        echo_red "Please check your network and try again."
         rm -f dae-linux-"$MACHINE".zip
         exit 1
     fi
@@ -477,18 +487,18 @@ download_dae() {
 
 install_dae() {
     temp_dir="$(mktemp -d /tmp/dae.XXXXXX)"
-    echo "${GREEN}unzipping dae's zip file...${RESET}"
+    echo_green "unzipping dae's zip file..."
     unzip dae-linux-"$MACHINE".zip -d "$temp_dir" >>/dev/null
     cp "$temp_dir""/dae-linux-""$MACHINE" /usr/local/bin/dae
     chmod +x /usr/local/bin/dae
     rm -f dae-linux-"$MACHINE".zip
-    echo "${GREEN}dae have been installed/updated.${RESET}"
+    echo_green "dae have been installed/updated."
     rm -rf "$temp_dir"
 }
 
 download_example_config() {
-    echo "${GREEN}Downloading dae's template configuration file...${RESET}"
-    echo "${GREEN}Downloading from: $example_config_url${RESET}"
+    echo_green "Downloading dae's template configuration file..."
+    echo_green "Downloading from: $example_config_url"
     if [ ! -d /usr/local/etc/dae ]; then
         mkdir -p /usr/local/etc/dae
     fi
@@ -499,28 +509,28 @@ download_example_config() {
 
 download_bash_completion() {
     [ -d /usr/share/bash-completion/completions ] || mkdir -p /usr/share/bash-completion/completions
-    echo "${GREEN}Downloading bash completion file...${RESET}"
-    echo "${GREEN}Downloading from: $bash_completion_url${RESET}"
+    echo_green "Downloading bash completion file..."
+    echo_green "Downloading from: $bash_completion_url"
     if ! curl -L "$bash_completion_url" -o /usr/share/bash-completion/completions/dae --progress-bar; then
-        echo "${YELLOW}Failed to download bash completion file.${RESET}"
+        echo_yellow "Failed to download bash completion file."
     fi
 }
 
 download_zsh_completion() {
     [ -d /usr/share/zsh/site-functions ] || mkdir -p /usr/share/zsh/site-functions
-    echo "${GREEN}Downloading zsh completion file...${RESET}"
-    echo "${GREEN}Downloading from: $zsh_completion_url${RESET}"
+    echo_green "Downloading zsh completion file..."
+    echo_green "Downloading from: $zsh_completion_url"
     if ! curl -L "$zsh_completion_url" -o /usr/share/zsh/site-functions/_dae --progress-bar; then
-        echo "${YELLOW}Failed to download zsh completion file.${RESET}"
+        echo_yellow "Failed to download zsh completion file."
     fi
 }
 
 download_fish_completion() {
     [ -d /usr/share/fish/vendor_completions.d ] || mkdir -p /usr/share/fish/vendor_completions.d
-    echo "${GREEN}Downloading fish completion file...${RESET}"
-    echo "${GREEN}Downloading from: $fish_completion_url${RESET}"
+    echo_green "Downloading fish completion file..."
+    echo_green "Downloading from: $fish_completion_url"
     if ! curl -L "$fish_completion_url" -o /usr/share/fish/vendor_completions.d/dae.fish --progress-bar; then
-        echo "${YELLOW}Failed to download fish completion file.${RESET}"
+        echo_yellow "Failed to download fish completion file."
     fi
 }
 
@@ -540,35 +550,35 @@ notify_configuration() {
     echo '----------------------------------------------------------------------'
     if [ "$notify_example" = 'yes' ]; then
         echo '----------------------------------------------------------------------'
-        echo "${YELLOW}warning: Failed to download example config file.${RESET}"
-        echo "${YELLOW}You can download it from:
-        https://github.com/daeuniverse/dae/raw/$latest_version/example.dae${RESET}"
+        echo_yellow "warning: Failed to download example config file."
+        echo_yellow "You can download it from:
+        https://github.com/daeuniverse/dae/raw/$latest_version/example.dae"
         echo '----------------------------------------------------------------------'
     fi
     echo '----------------------------------------------------------------------'
-    echo "${GREEN}dae have been installed/updated, installed version:${RESET}"
+    echo_green "dae have been installed/updated, installed version:"
     echo "$latest_version"
     if command -v systemctl >/dev/null 2>&1; then
-        echo "${GREEN}You can start dae by running:${RESET}"
+        echo_green "You can start dae by running:"
         echo "systemctl start dae.service"
-        echo "${GREEN}You can enable dae service so it can be started at system boot:${RESET}"
+        echo_green "You can enable dae service so it can be started at system boot:"
         echo "systemctl enable dae.service"
     elif command -v openrc-run >/dev/null 2>&1; then
-        echo "${GREEN}You can start dae by running:${RESET}"
+        echo_green "You can start dae by running:"
         echo "/etc/init.d/dae start"
-        echo "${GREEN}You can enable dae service so it can be started at system boot:${RESET}"
+        echo_green "You can enable dae service so it can be started at system boot:"
         echo "rc-update add dae default"
     else
-        echo "${YELLOW}No service installed beacuse of missing Systemd/OpenRC,
+        echo_yellow "No service installed beacuse of missing Systemd/OpenRC,
         you should write a service script/config for your service
-        manager by yourself.${RESET}"
+        manager by yourself."
     fi
     echo '----------------------------------------------------------------------'
     echo '----------------------------------------------------------------------'
-    echo "${GREEN}Your configuration file is:${RESET}"
+    echo_green "Your configuration file is:"
     echo "/usr/local/etc/dae/config.dae"
-    echo "${GREEN}And this file should be read by root only, you should${RESET}"
-    echo "${GREEN}change the permission of this file by running:${RESET}"
+    echo_green "And this file should be read by root only, you should"
+    echo_green "change the permission of this file by running:"
     echo "chmod 600 /usr/local/etc/dae/config.dae"
     echo '----------------------------------------------------------------------'
     echo '----------------------------------------------------------------------'
@@ -604,26 +614,26 @@ should_we_install_dae() {
     compare_version
     get_download_urls
     if [ "$compare_status" = '0' ]; then
-        echo "${GREEN}dae is already installed, current version: $current_version${RESET}"
+        echo_green "dae is already installed, current version: $current_version"
         notice_installled_tool
     elif [ "$current_version" = '0' ]; then
-        echo "${GREEN}Installing dae version $latest_version... ${RESET}"
+        echo_green "Installing dae version $latest_version... "
         installation
     elif [ "$compare_status" = '1' ]; then
-        echo "${YELLOW}Local version $current_version is greater than remote version $latest_version, ${RESET}"
-        echo "${GREEN}If you still want to install, use force-install arg anyway.${RESET}"
+        echo_yellow "Local version $current_version is greater than remote version $latest_version, "
+        echo_green "If you still want to install, use force-install arg anyway."
         exit 0
     else
-        echo "${GREEN}Upgrading dae version $current_version to version $latest_version... ${RESET}"
+        echo_green "Upgrading dae version $current_version to version $latest_version... "
         installation
     fi
 }
 
 show_helps() {
-    echo -e "${GREEN}""\033[1;4mUsage:\033[0m""${RESET}"
+    echo_green_bold "Usage:"
     echo "  $0 [command]"
     echo ' '
-    echo -e "${GREEN}""\033[1;4mAvailable commands:\033[0m""${RESET}"
+    echo_green_bold "Available commands:"
     echo "  use-cdn                 use Cloudflare Worker and jsDelivr CDN to download files"
     echo "  install                 install/update dae, default behavior"
     echo "  install-prerelease      install/update to the latest version of dae even if it's a prerelease"
@@ -637,7 +647,7 @@ show_helps() {
 # Main
 current_dir=$(pwd)
 cd /tmp/ || (
-    echo "${YELLOW}Failed to cd /tmp/${RESET}"
+    echo_yellow "Failed to cd /tmp/"
     exit 1
 )
 if [ "$1" = "" ] || [ "$1" = "use-cdn" ]; then
@@ -678,7 +688,7 @@ while [ $# != 0 ]; do
         ;;
     *)
         error_help='yes'
-        echo "${RED}error: Unknown command: $1${RESET}"
+        echo_red "error: Unknown command: $1"
         shift
         ;;
     esac
