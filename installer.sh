@@ -31,7 +31,7 @@ fi
 ## Check root
 user_id="$(id -u "$(whoami)")"
 if [ "$user_id" -ne 0 ]; then
-    echo_red "error: This script must be run as root!"
+    echo_red_bold "error: This script must be run as root!"
     exit 1
 fi
 
