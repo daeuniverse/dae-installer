@@ -249,17 +249,28 @@ check_online_version() {
             releases_url="https://github.com/daeuniverse/dae/releases/latest"
         fi
         temp_file="$(mktemp /tmp/dae.XXXXXX)"
-        if ! curl -sL "$releases_url" | \
-             grep '<h1 data-view-component="true" class="d-inline mr-3">' | \
-             awk -F ' <h1 data-view-component="true" class="d-inline mr-3">' '{print $2}' | \
-             awk -F '</h1>' '{print $1}' | \
-             tee "$temp_file" >> /dev/null; then
-            echo_red "error: Failed to get the latest version of dae!"
-            echo_red "Please check your network and try again."
-            exit 1
+        if [ "$allow_prereleases" = 'yes' ]; then
+            if ! curl -sL "$releases_url" | \
+                grep '<h1 data-view-component="true" class="d-inline mr-3">' | \
+                awk -F ' <h1 data-view-component="true" class="d-inline mr-3">' '{print $2}' | \
+                awk -F '</h1>' '{print $1}' | \
+                tee "$temp_file" >> /dev/null; then
+                echo_red "error: Failed to get the latest version of dae!"
+                echo_red "Please check your network and try again."
+                exit 1
+            else
+                latest_version="$(cat "$temp_file" | head -n 1)"
+                rm "$temp_file"
+            fi
         else
-            latest_version="$(cat "$temp_file" | head -n 1)"
-            rm "$temp_file"
+            if ! curl "$releases_url" -I 2>/dev/null | grep -i '^location: ' | grep -Eo '/daeuniverse/dae/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+' | awk -F '/tag/' '{print $2}' | tee "$temp_file" >> /dev/null; then
+                echo_red "error: Failed to get the latest version of dae!"
+                echo_red "Please check your network and try again."
+                exit 1
+            else
+                latest_version="$(cat "$temp_file" | head -n 1)"
+                rm "$temp_file"
+            fi
         fi
     fi
 }
